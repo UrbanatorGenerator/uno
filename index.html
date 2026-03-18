@@ -102,7 +102,7 @@
       border-radius: 10px;
       overflow: hidden;
       border: 1px solid #e8e0d0;
-      margin-bottom: 20px;
+      margin-bottom: 28px;
     }
 
     /* Hide floating toggle — we use embedded mode */
@@ -179,6 +179,13 @@
       font-size: 13px; color: #ef4444; padding: 12px 0;
     }
 
+    /* ── RESPONSIVE MOBILE ── */
+    @media (max-width: 640px) {
+      main { padding: 16px 14px; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .charts { grid-template-columns: 1fr; }
+    }
+
     /* ── n8n CHAT OVERRIDES ── */
     :root {
       --chat--color-primary: #1c5070;
@@ -217,6 +224,8 @@
 </header>
 
 <main>
+  <div id="uno-chat-section"></div>
+
   <div class="cards">
     <div class="card">
       <div class="card-label">Conversations Today</div>
@@ -252,8 +261,6 @@
   </div>
 
   <div id="error" class="error-msg" style="display:none;"></div>
-
-  <div id="uno-chat-section"></div>
 
   <footer>
     <span>Powered by Powersales — 2026</span>
