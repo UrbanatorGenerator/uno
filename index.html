@@ -144,16 +144,16 @@
 
     /* ── FOOTER ── */
     footer {
-      padding: 8px 0 8px 0;
+      padding: 8px 32px;
       font-size: 18px;
       font-weight: 700;
       color: #bc282f;
       letter-spacing: 0.3px;
       display: flex;
       flex-direction: row;
+      flex-wrap: nowrap;
       justify-content: space-between;
       align-items: center;
-      width: 100%;
     }
     .stats-link {
       font-size: 13px;
@@ -241,11 +241,12 @@
 
   <div id="error" class="error-msg" style="display:none;"></div>
 
-  <footer>
-    <span>Powered by Powersales — 2026</span>
-    <a href="statistics.html" class="stats-link">Statistics</a>
-  </footer>
 </main>
+
+<footer>
+  <span>Powered by Powersales — 2026</span>
+  <a href="statistics.html" class="stats-link">Statistics</a>
+</footer>
 
 <script type="module">
   import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
