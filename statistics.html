@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uno Statistics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1c5070;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 20px 32px;
+      border-bottom: 1px solid #1e1e1e;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .uno-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      object-fit: cover; border: 2px solid #2a2a2a;
+    }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    header h1 span { color: #3b82f6; }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #fdf9f3;
+    }
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+    main { padding: 28px 32px; max-width: 1200px; }
+
+    /* ── STAT CARDS ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #141414; border: 1px solid #1e1e1e;
+      border-radius: 10px; padding: 18px 20px;
+    }
+    .card-label {
+      font-size: 11px; color: #555; text-transform: uppercase;
+      letter-spacing: 0.6px; margin-bottom: 10px;
+    }
+    .card-value {
+      font-size: 26px; font-weight: 700; color: #fff; line-height: 1;
+    }
+    .card-value.blue { color: #3b82f6; }
+    .card-sub { font-size: 11px; color: #3a3a3a; margin-top: 6px; }
+
+    /* ── CHARTS ── */
+    .charts {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .chart-card {
+      background: #141414; border: 1px solid #1e1e1e;
+      border-radius: 10px; padding: 20px 22px;
+    }
+    .chart-title {
+      font-size: 11px; font-weight: 600; color: #444;
+      text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 18px;
+    }
+    .chart-wrap { position: relative; height: 190px; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 8px 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #bc282f;
+      letter-spacing: 0.3px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .back-link {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fdf9f3;
+      text-decoration: none;
+      opacity: 0.75;
+      transition: opacity .15s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    /* ── ERROR ── */
+    .error-msg { font-size: 13px; color: #ef4444; padding: 12px 0; }
+
+    /* ── RESPONSIVE MOBILE ── */
+    @media (max-width: 640px) {
+      main { padding: 16px 14px; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .charts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <img src="Uno_lowres2.png" alt="Uno" class="uno-avatar" onerror="this.style.display='none'" />
+    <h1>Uno <span>Statistics</span></h1>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> Live</div>
+  </div>
+</header>
+
+<main>
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Conversations Today</div>
+      <div class="card-value" id="conv-today">—</div>
+      <div class="card-sub" id="conv-week">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Cost Today</div>
+      <div class="card-value blue" id="cost-today">—</div>
+      <div class="card-sub" id="cost-week">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Tokens Today</div>
+      <div class="card-value" id="tokens-today">—</div>
+      <div class="card-sub" id="tokens-week">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Total Cost</div>
+      <div class="card-value blue" id="cost-total">—</div>
+      <div class="card-sub">since launch</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-card">
+      <div class="chart-title">Cost USD — Last 14 Days</div>
+      <div class="chart-wrap"><canvas id="costChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Channel (total)</div>
+      <div class="chart-wrap"><canvas id="channelChart"></canvas></div>
+    </div>
+  </div>
+
+  <div id="error" class="error-msg" style="display:none;"></div>
+
+  <footer>
+    <span>Powered by Powersales — 2026</span>
+    <a href="index.html" class="back-link">← Back</a>
+  </footer>
+</main>
+
+<script>
+  const SHEET_ID = '1RckDX52xOjN8lnXz0hmnFVvqgPFYishrzjMMPPt62KQ';
+  let costChart, channelChart;
+
+  function todayStr() { return new Date().toLocaleDateString('sv-SE'); }
+  function dateNDaysAgo(n) {
+    const d = new Date(); d.setDate(d.getDate() - n);
+    return d.toLocaleDateString('sv-SE');
+  }
+
+  async function loadData() {
+    const errEl = document.getElementById('error');
+    errEl.style.display = 'none';
+    try {
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Blad1&cachebust=${Date.now()}`;
+      const text = await fetch(url).then(r => r.text());
+      const json = JSON.parse(text.match(/setResponse\(([\s\S]+)\)/)[1]);
+      const cols = json.table.cols.map(c => c.label);
+      const idx = {};
+      cols.forEach((c, i) => idx[c] = i);
+
+      const rows = json.table.rows
+        .filter(r => r.c[idx['Date']]?.v || r.c[idx['Date']]?.f)
+        .map(r => {
+          const dateVal = r.c[idx['Date']]?.f || r.c[idx['Date']]?.v || '';
+          return {
+            date:    typeof dateVal === 'string' ? dateVal.substring(0, 10) : '',
+            channel: r.c[idx['Channel']]?.v || '',
+            tokens:  Number(r.c[idx['TotalTokenEst']]?.v) || 0,
+            cost:    Number(r.c[idx['PublCostEst']]?.v) || Number(r.c[idx['CostEst']]?.v) || 0,
+          };
+        })
+        .filter(r => r.date.length === 10);
+
+      const today   = todayStr();
+      const weekAgo = dateNDaysAgo(7);
+      const todayRows = rows.filter(r => r.date === today);
+      const weekRows  = rows.filter(r => r.date >= weekAgo);
+
+      document.getElementById('conv-today').textContent = todayRows.length;
+      document.getElementById('conv-week').textContent  = `${weekRows.length} last 7 days`;
+
+      const costToday = todayRows.reduce((s, r) => s + r.cost, 0);
+      const costWeek  = weekRows.reduce((s, r) => s + r.cost, 0);
+      const costTotal = rows.reduce((s, r) => s + r.cost, 0);
+      document.getElementById('cost-today').textContent = `$${costToday.toFixed(4)}`;
+      document.getElementById('cost-week').textContent  = `$${costWeek.toFixed(4)} last 7 days`;
+      document.getElementById('cost-total').textContent = `$${costTotal.toFixed(4)}`;
+
+      const tokToday = todayRows.reduce((s, r) => s + r.tokens, 0);
+      const tokWeek  = weekRows.reduce((s, r) => s + r.tokens, 0);
+      document.getElementById('tokens-today').textContent = tokToday.toLocaleString('sv-SE');
+      document.getElementById('tokens-week').textContent  = `${tokWeek.toLocaleString('sv-SE')} last 7 days`;
+
+      // Cost chart
+      const labels = [];
+      const costMap = {};
+      for (let i = 13; i >= 0; i--) {
+        const d = dateNDaysAgo(i);
+        labels.push(d.slice(5));
+        costMap[d] = 0;
+      }
+      rows.forEach(r => { if (r.date in costMap) costMap[r.date] += r.cost; });
+      const costValues = Object.values(costMap);
+
+      if (costChart) costChart.destroy();
+      costChart = new Chart(document.getElementById('costChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ data: costValues, backgroundColor: 'rgba(59,130,246,0.55)', borderColor: '#3b82f6', borderWidth: 1, borderRadius: 4 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toFixed(4)}` } } },
+          scales: {
+            x: { grid: { color: '#1a1a1a' }, ticks: { color: '#444', font: { size: 11 } } },
+            y: { grid: { color: '#1a1a1a' }, ticks: { color: '#444', font: { size: 11 }, callback: v => `$${v.toFixed(3)}` }, beginAtZero: true }
+          }
+        }
+      });
+
+      // Channel donut
+      const telegram = rows.filter(r => r.channel === 'Telegram').length;
+      const chat     = rows.filter(r => r.channel === 'Chat').length;
+
+      if (channelChart) channelChart.destroy();
+      channelChart = new Chart(document.getElementById('channelChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Telegram', 'Chat'],
+          datasets: [{ data: [telegram, chat], backgroundColor: ['#3b82f6', '#8b5cf6'], borderColor: '#141414', borderWidth: 3 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#555', padding: 16, font: { size: 12 } } },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/(telegram+chat||1)*100)}%)` } }
+          }
+        }
+      });
+
+    } catch(e) {
+      errEl.textContent = `Failed to load data: ${e.message}`;
+      errEl.style.display = 'block';
+    }
+  }
+
+  loadData();
+  setInterval(loadData, 60 * 1000);
+</script>
+
+</body>
+</html>
