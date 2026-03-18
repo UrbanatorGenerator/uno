@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uno Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1c5070;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 20px 32px;
+      border-bottom: 1px solid #1e1e1e;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .uno-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      object-fit: cover; border: 2px solid #2a2a2a;
+    }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    header h1 span { color: #3b82f6; }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .login-link {
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5); text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+      padding: 5px 12px; transition: all .15s;
+    }
+    .login-link:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.35); }
+
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #555;
+    }
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+    .refresh-btn {
+      background: none; border: 1px solid #282828; color: #555;
+      padding: 5px 12px; border-radius: 6px; font-size: 12px;
+      cursor: pointer; transition: all .15s;
+    }
+    .refresh-btn:hover { border-color: #444; color: #aaa; }
+
+    main { padding: 28px 32px; max-width: 1200px; }
+
+    /* ── STAT CARDS ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #141414; border: 1px solid #1e1e1e;
+      border-radius: 10px; padding: 18px 20px;
+    }
+    .card-label {
+      font-size: 11px; color: #555; text-transform: uppercase;
+      letter-spacing: 0.6px; margin-bottom: 10px;
+    }
+    .card-value {
+      font-size: 26px; font-weight: 700; color: #fff; line-height: 1;
+    }
+    .card-value.blue { color: #3b82f6; }
+    .card-sub { font-size: 11px; color: #3a3a3a; margin-top: 6px; }
+
+    /* ── CHARTS ── */
+    .charts {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .chart-card {
+      background: #141414; border: 1px solid #1e1e1e;
+      border-radius: 10px; padding: 20px 22px;
+    }
+    .chart-title {
+      font-size: 11px; font-weight: 600; color: #444;
+      text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 18px;
+    }
+    .chart-wrap { position: relative; height: 190px; }
+
+    /* ── EMBEDDED CHAT SECTION ── */
+    #uno-chat-section {
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #e8e0d0;
+      margin-bottom: 20px;
+    }
+
+    /* Hide floating toggle — we use embedded mode */
+    .chat-window-toggle, [class*="chat-window-toggle"] { display: none !important; }
+
+    /* Chat send button — page background color */
+    #uno-chat-section button.chat-input-send-button,
+    #uno-chat-section [class*="send-button"],
+    #uno-chat-section button[type="submit"] {
+      background: #1c5070 !important;
+      background-color: #1c5070 !important;
+    }
+    #uno-chat-section button.chat-input-send-button svg,
+    #uno-chat-section [class*="send-button"] svg { color: #fff !important; fill: #fff !important; }
+
+    /* Cream white theme */
+    .chat-body, [class*="chat-body"] { background: #fdf9f3 !important; }
+    .chat-messages-list, [class*="messages-list"] { background: #fdf9f3 !important; }
+    .chat-message.bot .chat-message-text { background: #ede8df !important; color: #1a1a1a !important; }
+    .chat-message-text, [class*="message-text"] { color: #1a1a1a !important; }
+    .chat-input-wrapper, [class*="chat-input"] { background: #fdf9f3 !important; border-top: 1px solid #e8e0d0 !important; }
+    .chat-input textarea, .chat-input input { background: #fff !important; color: #111 !important; border: 1px solid #ddd5c5 !important; }
+
+    /* Header */
+    .chat-header, [class*="chat-header"] { background: #fdf9f3 !important; border-bottom: 1px solid #e8e0d0 !important; display: flex !important; flex-direction: row !important; align-items: center !important; gap: 12px !important; justify-content: flex-start !important; padding-left: 16px !important; }
+    [class*="chat-header"] * { color: #1a1a1a !important; }
+    .chat-header-text { display: flex; flex-direction: column; }
+    .chat-heading { margin-bottom: 0 !important; }
+    .chat-heading h1 { margin-bottom: 0 !important; line-height: 1 !important; font-size: 18px !important; }
+    .chat-header > p { margin-top: 0 !important; line-height: 1 !important; }
+    .chat-logo {
+      width: 48px; height: 48px; border-radius: 6px;
+      object-fit: cover; flex-shrink: 0;
+    }
+
+    /* Dynamic height — messages area grows */
+    .chat-messages-list { min-height: 300px !important; max-height: none !important; }
+    .n8n-chat { height: auto !important; min-height: 460px !important; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 24px 0 8px 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: #bc282f;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── ERROR ── */
+    .error-msg {
+      font-size: 13px; color: #ef4444; padding: 12px 0;
+    }
+
+    /* ── n8n CHAT OVERRIDES ── */
+    :root {
+      --chat--color-primary: #1c5070;
+      --chat--color-primary-shade-50: #174260;
+      --chat--color-primary-shade-100: #123450;
+      --chat--color-secondary: #1c5070;
+      --chat--color-secondary-shade-50: #174260;
+      --chat--window--width: 100%;
+      --chat--window--height: auto;
+      --chat--header--background: #fdf9f3;
+      --chat--header--color: #1a1a1a;
+      --chat--message--bot--background: #ede8df;
+      --chat--message--bot--color: #1a1a1a;
+      --chat--message--user--background: #3b82f6;
+      --chat--message--user--color: #fff;
+      --chat--background: #fdf9f3;
+      --chat--input--background: #fff;
+      --chat--input--border-color: #ddd5c5;
+      --chat--input--color: #111;
+      --chat--toggle--background: #3b82f6;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <img src="Uno_lowres2.png" alt="Uno" class="uno-avatar" onerror="this.style.display='none'" />
+    <h1>Uno <span>Dashboard</span></h1>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> Live</div>
+    <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    <a href="#" class="login-link">Log in for full access</a>
+  </div>
+</header>
+
+<main>
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Conversations Today</div>
+      <div class="card-value" id="conv-today">—</div>
+      <div class="card-sub" id="conv-week">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Cost Today</div>
+      <div class="card-value blue" id="cost-today">—</div>
+      <div class="card-sub" id="cost-week">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Tokens Today</div>
+      <div class="card-value" id="tokens-today">—</div>
+      <div class="card-sub" id="tokens-week">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Total Cost</div>
+      <div class="card-value blue" id="cost-total">—</div>
+      <div class="card-sub">since launch</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-card">
+      <div class="chart-title">Cost USD — Last 14 Days</div>
+      <div class="chart-wrap"><canvas id="costChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Channel (total)</div>
+      <div class="chart-wrap"><canvas id="channelChart"></canvas></div>
+    </div>
+  </div>
+
+  <div id="error" class="error-msg" style="display:none;"></div>
+
+  <div id="uno-chat-section"></div>
+
+  <footer>
+    <span>Powered by Powersales — 2026</span>
+  </footer>
+</main>
+
+<script type="module">
+  import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
+
+  function injectChatLogo() {
+    const header = document.querySelector('#uno-chat-section .chat-header');
+    if (header && !header.querySelector('.chat-logo')) {
+      const logo = document.createElement('img');
+      logo.src = 'PSC ny logo.jpg';
+      logo.className = 'chat-logo';
+      logo.alt = 'Powersales';
+      header.insertBefore(logo, header.firstChild);
+    }
+  }
+  // Poll until chat header is rendered
+  const logoTimer = setInterval(() => {
+    injectChatLogo();
+    if (document.querySelector('#uno-chat-section .chat-logo')) clearInterval(logoTimer);
+  }, 200);
+
+  createChat({
+    webhookUrl: 'https://urbanator25.app.n8n.cloud/webhook/cb38e6b8-379b-4791-b161-7e79e148f0e2/chat',
+    mode: 'fullscreen',
+    target: '#uno-chat-section',
+    chatInputKey: 'chatInput',
+    chatSessionKey: 'sessionId',
+    initialMessages: ['Hello, Uno here. How can I help you today?'],
+    i18n: {
+      en: {
+        title: 'Uno',
+        subtitle: 'Your Personal Sales Assistant',
+        inputPlaceholder: 'Write a message...',
+        getStarted: 'New chat',
+        closeButtonTooltip: 'Close',
+      }
+    }
+  });
+</script>
+
+<script>
+  const SHEET_ID = '1RckDX52xOjN8lnXz0hmnFVvqgPFYishrzjMMPPt62KQ';
+  let costChart, channelChart;
+
+  function todayStr() {
+    return new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD
+  }
+
+  function dateNDaysAgo(n) {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toLocaleDateString('sv-SE');
+  }
+
+  async function loadData() {
+    const errEl = document.getElementById('error');
+    errEl.style.display = 'none';
+
+    try {
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Blad1&cachebust=${Date.now()}`;
+      const text = await fetch(url).then(r => r.text());
+      const json = JSON.parse(text.match(/setResponse\(([\s\S]+)\)/)[1]);
+
+      const cols = json.table.cols.map(c => c.label);
+      const idx = {};
+      cols.forEach((c, i) => idx[c] = i);
+
+      const rows = json.table.rows
+        .filter(r => r.c[idx['Date']]?.v || r.c[idx['Date']]?.f)
+        .map(r => {
+          const dateVal = r.c[idx['Date']]?.f || r.c[idx['Date']]?.v || '';
+          return {
+            date:    typeof dateVal === 'string' ? dateVal.substring(0, 10) : '',
+            channel: r.c[idx['Channel']]?.v || '',
+            tokens:  Number(r.c[idx['TotalTokenEst']]?.v) || 0,
+            cost:    Number(r.c[idx['PublCostEst']]?.v) || Number(r.c[idx['CostEst']]?.v) || 0,
+          };
+        })
+        .filter(r => r.date.length === 10);
+
+      const today = todayStr();
+      const weekAgo = dateNDaysAgo(7);
+
+      const todayRows = rows.filter(r => r.date === today);
+      const weekRows  = rows.filter(r => r.date >= weekAgo);
+
+      // Stat cards
+      document.getElementById('conv-today').textContent = todayRows.length;
+      document.getElementById('conv-week').textContent  = `${weekRows.length} last 7 days`;
+
+      const costToday = todayRows.reduce((s, r) => s + r.cost, 0);
+      const costWeek  = weekRows.reduce((s, r)  => s + r.cost, 0);
+      const costTotal = rows.reduce((s, r) => s + r.cost, 0);
+      document.getElementById('cost-today').textContent = `$${costToday.toFixed(4)}`;
+      document.getElementById('cost-week').textContent  = `$${costWeek.toFixed(4)} last 7 days`;
+      document.getElementById('cost-total').textContent = `$${costTotal.toFixed(4)}`;
+
+      const tokToday = todayRows.reduce((s, r) => s + r.tokens, 0);
+      const tokWeek  = weekRows.reduce((s, r)  => s + r.tokens, 0);
+      document.getElementById('tokens-today').textContent = tokToday.toLocaleString('sv-SE');
+      document.getElementById('tokens-week').textContent  = `${tokWeek.toLocaleString('sv-SE')} last 7 days`;
+
+      // Cost chart — last 14 days
+      const labels = [];
+      const costMap = {};
+      for (let i = 13; i >= 0; i--) {
+        const d = dateNDaysAgo(i);
+        labels.push(d.slice(5));   // MM-DD
+        costMap[d] = 0;
+      }
+      rows.forEach(r => { if (r.date in costMap) costMap[r.date] += r.cost; });
+      const costValues = Object.values(costMap);
+
+      if (costChart) costChart.destroy();
+      costChart = new Chart(document.getElementById('costChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data: costValues,
+            backgroundColor: 'rgba(59,130,246,0.55)',
+            borderColor: '#3b82f6',
+            borderWidth: 1,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toFixed(4)}` } }
+          },
+          scales: {
+            x: { grid: { color: '#1a1a1a' }, ticks: { color: '#444', font: { size: 11 } } },
+            y: { grid: { color: '#1a1a1a' }, ticks: { color: '#444', font: { size: 11 }, callback: v => `$${v.toFixed(3)}` }, beginAtZero: true }
+          }
+        }
+      });
+
+      // Channel donut
+      const telegram = rows.filter(r => r.channel === 'Telegram').length;
+      const chat     = rows.filter(r => r.channel === 'Chat').length;
+
+      if (channelChart) channelChart.destroy();
+      channelChart = new Chart(document.getElementById('channelChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Telegram', 'Chat'],
+          datasets: [{
+            data: [telegram, chat],
+            backgroundColor: ['#3b82f6', '#8b5cf6'],
+            borderColor: '#141414',
+            borderWidth: 3,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#555', padding: 16, font: { size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/(telegram+chat||1)*100)}%)`
+              }
+            }
+          }
+        }
+      });
+
+    } catch (e) {
+      errEl.textContent = `Failed to load data: ${e.message}`;
+      errEl.style.display = 'block';
+      console.error(e);
+    }
+  }
+
+  window.loadData = loadData;
+  loadData();
+  setInterval(loadData, 60 * 1000); // auto-refresh varje minut
+</script>
+
+</body>
+</html>
