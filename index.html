@@ -151,6 +151,29 @@
       letter-spacing: 0.3px;
     }
 
+    /* ── CHAT STARTERS ── */
+    .chat-starters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 12px 16px 4px;
+    }
+    .chat-starter-btn {
+      background: #fff;
+      border: 1.5px solid #1c5070;
+      color: #1c5070;
+      border-radius: 20px;
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .chat-starter-btn:hover {
+      background: #1c5070;
+      color: #fff;
+    }
+
     /* ── ERROR ── */
     .error-msg {
       font-size: 13px; color: #ef4444; padding: 12px 0;
@@ -256,6 +279,52 @@
     if (document.querySelector('#uno-chat-section .chat-logo')) clearInterval(logoTimer);
   }, 200);
 
+  const STARTERS = [
+    'What can you help me with?',
+    'To get the best advice, address the Sales Expert in your question.'
+  ];
+
+  function sendStarterMessage(text) {
+    const section = document.querySelector('#uno-chat-section');
+    const textarea = section && section.querySelector('textarea');
+    const sendBtn  = section && section.querySelector('button[type="submit"], .chat-input-send-button, button.send');
+    if (!textarea) return;
+    // Set value and trigger Vue reactivity
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+    nativeInputValueSetter.call(textarea, text);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    // Click send after short delay
+    setTimeout(() => {
+      if (sendBtn) sendBtn.click();
+      else textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      // Hide starters after use
+      const starters = document.querySelector('.chat-starters');
+      if (starters) starters.remove();
+    }, 50);
+  }
+
+  function injectChatStarters() {
+    const section = document.querySelector('#uno-chat-section');
+    if (!section || section.querySelector('.chat-starters')) return;
+    const inputArea = section.querySelector('.chat-inputs, .chat-input, form');
+    if (!inputArea) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chat-starters';
+    STARTERS.forEach(text => {
+      const btn = document.createElement('button');
+      btn.className = 'chat-starter-btn';
+      btn.textContent = text;
+      btn.addEventListener('click', () => sendStarterMessage(text));
+      wrapper.appendChild(btn);
+    });
+    inputArea.parentNode.insertBefore(wrapper, inputArea);
+  }
+
+  const startersTimer = setInterval(() => {
+    injectChatStarters();
+    if (document.querySelector('.chat-starters')) clearInterval(startersTimer);
+  }, 200);
+
   createChat({
     webhookUrl: 'https://urbanator25.app.n8n.cloud/webhook/cb38e6b8-379b-4791-b161-7e79e148f0e2/chat',
     mode: 'fullscreen',
@@ -263,10 +332,6 @@
     chatInputKey: 'chatInput',
     chatSessionKey: 'sessionId',
     initialMessages: ['Hello, Uno here. How can I help you today?'],
-    suggestedMessages: [
-      'What can you help me with?',
-      'To get the best advice, address the Sales Expert in your question.'
-    ],
     i18n: {
       en: {
         title: 'Uno',
