@@ -29,7 +29,7 @@
       object-fit: cover; border: 2px solid #2a2a2a;
     }
     header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: #fdf9f3; }
-    header h1 .sub { display: block; font-size: 12px; font-weight: 500; color: #3b82f6; letter-spacing: 0.2px; margin-top: 2px; }
+    header h1 .sub { display: inline; font-size: 18px; font-weight: 700; color: #3b82f6; letter-spacing: -0.3px; }
 
     .header-right { display: flex; align-items: center; gap: 16px; }
     .login-link {
@@ -56,7 +56,7 @@
     }
     .refresh-btn:hover { border-color: #444; color: #aaa; }
 
-    main { padding: 28px 32px; max-width: 1200px; }
+    main { padding: 28px 32px; max-width: 1200px; width: 100%; }
 
     /* ── STAT CARDS ── */
     .cards {
@@ -150,8 +150,10 @@
       color: #bc282f;
       letter-spacing: 0.3px;
       display: flex;
+      flex-direction: row;
       justify-content: space-between;
       align-items: center;
+      width: 100%;
     }
     .stats-link {
       font-size: 13px;
