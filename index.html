@@ -467,43 +467,16 @@
     el.className = 'tv ' + (change >= 0 ? 'up' : 'down');
   }
 
-  async function loadIndices() {
-    const symbols = '^GSPC,^FTSE,^GDAXI,^OMXSPI,^OMX,^N225';
-    const map = {'^GSPC':'spx','^FTSE':'ftse','^GDAXI':'dax','^OMXSPI':'omxspi','^OMX':'omxs30','^N225':'nikkei'};
+  async function loadTicker() {
     try {
-      const url = 'https://corsproxy.io/?' + encodeURIComponent('https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + symbols);
-      const r = await fetch(url);
+      const r = await fetch('market-data.json?t=' + Date.now());
       const d = await r.json();
-      for (const q of (d.quoteResponse?.result || [])) {
-        const key = map[q.symbol];
-        if (!key) continue;
-        const chg = q.regularMarketPreviousClose ? (q.regularMarketPrice - q.regularMarketPreviousClose) / q.regularMarketPreviousClose * 100 : 0;
-        setTicker('t-'+key, q.regularMarketPrice.toLocaleString('en-US',{maximumFractionDigits:2}), chg);
-      }
-    } catch(e) {}
+      const keys = ['spx','ftse','dax','omxspi','omxs30','nikkei','eurusd','gbpusd','eurchf','eurjpy','usdchf','usdjpy','usdsek','usddkk','usdnok'];
+      keys.forEach(k => { if (d[k]) setTicker('t-'+k, d[k].price, d[k].change ?? null); });
+    } catch(e) { console.error('Ticker error:', e); }
   }
-
-  async function loadFX() {
-    try {
-      const r = await fetch('https://open.er-api.com/v6/latest/EUR');
-      const d = await r.json();
-      const R = d.rates || {};
-      const fx = (v,dec) => v ? v.toFixed(dec) : null;
-      if (R.USD) setTicker('t-eurusd', fx(R.USD,4), null);
-      if (R.GBP && R.USD) setTicker('t-gbpusd', fx(R.USD/R.GBP,4), null);
-      if (R.CHF) setTicker('t-eurchf', fx(R.CHF,4), null);
-      if (R.JPY) setTicker('t-eurjpy', fx(R.JPY,2), null);
-      if (R.USD && R.CHF) setTicker('t-usdchf', fx(R.CHF/R.USD,4), null);
-      if (R.USD && R.JPY) setTicker('t-usdjpy', fx(R.JPY/R.USD,2), null);
-      if (R.USD && R.SEK) setTicker('t-usdsek', fx(R.SEK/R.USD,4), null);
-      if (R.USD && R.DKK) setTicker('t-usddkk', fx(R.DKK/R.USD,4), null);
-      if (R.USD && R.NOK) setTicker('t-usdnok', fx(R.NOK/R.USD,4), null);
-    } catch(e) {}
-  }
-
-  function loadTicker() { loadIndices(); loadFX(); }
   document.addEventListener('DOMContentLoaded', loadTicker);
-  setInterval(loadTicker, 5 * 60 * 1000);
+  setInterval(loadTicker, 15 * 60 * 1000);
 })();
 </script>
 </body>
