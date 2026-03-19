@@ -259,8 +259,9 @@
       const msgs = msgList.querySelectorAll('.chat-message');
       if (!msgs.length) return;
       const last = msgs[msgs.length - 1];
-      // User just sent a message — start timer
+      // User just sent a message — hide starters + start timer
       if (last.classList.contains('from-user') || last.classList.contains('user')) {
+        document.querySelectorAll('.chat-starters').forEach(e => e.remove());
         clearTimeout(thinkTimer);
         document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
         thinkTimer = setTimeout(() => {
