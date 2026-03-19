@@ -187,6 +187,7 @@
   <div class="nav-section">Information</div>
   <button class="nav-item" id="aboutBtn">ℹ️ About Uno</button>
   <button class="nav-item" id="gdprBtn">🔒 Privacy & GDPR</button>
+  <button class="nav-item" id="dashBtn">📈 Dashboard Explained</button>
 </nav>
 
 <div id="aboutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;">
@@ -222,7 +223,8 @@
   navOverlay.addEventListener('click', closeMenu);
   document.getElementById('aboutBtn').addEventListener('click', () => { closeMenu(); document.getElementById('aboutModal').style.display='flex'; });
   document.getElementById('gdprBtn').addEventListener('click', () => { closeMenu(); document.getElementById('gdprModal').style.display='flex'; });
-  document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeMenu(); document.getElementById('aboutModal').style.display='none'; document.getElementById('gdprModal').style.display='none'; }});
+  document.getElementById('dashBtn').addEventListener('click', () => { closeMenu(); document.getElementById('dashModal').style.display='flex'; });
+  document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeMenu(); document.getElementById('aboutModal').style.display='none'; document.getElementById('gdprModal').style.display='none'; document.getElementById('dashModal').style.display='none'; }});
 </script>
 
 <main>
@@ -437,5 +439,19 @@
   setInterval(loadTicker, 15 * 60 * 1000);
 })();
 </script>
+<!-- Dashboard Explained Modal -->
+<div id="dashModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#1a2744;border-radius:12px;padding:32px;max-width:480px;width:90%;color:#fdf9f3;position:relative;border:1px solid rgba(255,255,255,0.12);max-height:80vh;overflow-y:auto;">
+    <button onclick="document.getElementById('dashModal').style.display='none'" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#fdf9f3;font-size:20px;cursor:pointer;opacity:0.6;">✕</button>
+    <h2 style="font-size:18px;margin-bottom:16px;">📈 Dashboard Explained</h2>
+    <p style="font-size:14px;line-height:1.7;opacity:0.85;"><strong>Conversations Today</strong> — Number of chat sessions initiated on the web interface today.</p>
+    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Cost Today</strong> — Estimated API cost in USD for all AI interactions today (Claude + tools).</p>
+    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Tokens Today</strong> — Total tokens consumed today across all channels (web + Telegram).</p>
+    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Total Cost</strong> — Cumulative API cost since tracking began.</p>
+    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Cost chart</strong> — Daily cost trend over the last 14 days.</p>
+    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Channel chart</strong> — Distribution of usage between web chat and Telegram.</p>
+    <p style="font-size:12px;margin-top:20px;opacity:0.5;">Data updates every time a conversation completes. Market data refreshes every 15 min.</p>
+  </div>
+</div>
 </body>
 </html>
