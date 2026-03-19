@@ -427,49 +427,59 @@
 </div>
 
 <script>
-  // Show thinking message 15s after user sends a message (no fetch wrapping)
-  let thinkTimer = null;
-  let lastMsgCount = 0;
-  document.addEventListener('DOMContentLoaded', () => {
-    const observer = new MutationObserver(() => {
-      const msgList = document.querySelector('.chat-messages-list');
-      if (!msgList) return;
-      const msgs = msgList.querySelectorAll('.chat-message');
-      const count = msgs.length;
-      if (count === lastMsgCount) return;
-      lastMsgCount = count;
-      const last = msgs[count - 1];
+  // POST-only fetch interceptor: extends timeout to 120s + shows thinking message at 15s
+  // Only wraps POST to n8n.cloud — background GET/session calls are unaffected (no doubled metrics)
+  (function() {
+    let thinkTimer = null;
+    let startersRemoved = false;
+    const _origFetch = window.fetch.bind(window);
 
-      // Detect bot reply: has any class containing "bot", "assistant", "agent", or "system"
-      const isBotMsg = [...last.classList].some(c =>
-        /bot|assistant|agent|system/i.test(c)
-      );
+    function getMsgContainer() {
+      // Try multiple possible class names the n8n chat widget might use
+      return document.querySelector('.chat-messages-list')
+          || document.querySelector('.chat-messages')
+          || document.querySelector('[class*="messages-list"]')
+          || document.querySelector('[class*="chat-messages"]');
+    }
 
-      if (!isBotMsg && count > 0) {
-        // Likely a user message — hide starters + start thinking timer
-        document.querySelectorAll('.chat-starters').forEach(e => e.remove());
-        clearTimeout(thinkTimer);
-        document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
-        thinkTimer = setTimeout(() => {
-          if (msgList.querySelector('.uno-thinking')) return;
-          const el = document.createElement('div');
-          el.className = 'uno-thinking';
-          el.style.cssText = 'font-style:italic; font-size:13px; padding:6px 14px; margin:4px 0; color:#000000; opacity:0.85;';
-          el.textContent = '⏳ I\'m digging into this — expert queries can take up to 60 seconds.';
-          msgList.appendChild(el);
-          msgList.scrollTop = msgList.scrollHeight;
-        }, 15000);
-      } else {
-        // Bot replied — clear timer and thinking message
-        clearTimeout(thinkTimer);
-        document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
+    function showThinking() {
+      const c = getMsgContainer();
+      if (!c || c.querySelector('.uno-thinking')) return;
+      const el = document.createElement('div');
+      el.className = 'uno-thinking';
+      el.style.cssText = 'font-style:italic; font-size:13px; padding:6px 14px; margin:4px 0; color:#000000; opacity:0.85;';
+      el.textContent = '⏳ I\'m digging into this — expert queries can take up to 60 seconds.';
+      c.appendChild(el);
+      c.scrollTop = c.scrollHeight;
+    }
+
+    function clearThinking() {
+      clearTimeout(thinkTimer);
+      document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
+    }
+
+    window.fetch = function(url, opts) {
+      opts = opts || {};
+      const method = (opts.method || 'GET').toUpperCase();
+      if (typeof url === 'string' && url.includes('n8n.cloud') && method === 'POST') {
+        // Hide chat starters on first user message
+        if (!startersRemoved) {
+          startersRemoved = true;
+          document.querySelectorAll('.chat-starters').forEach(e => e.remove());
+        }
+        // Start thinking timer, extend browser timeout to 120s
+        clearThinking();
+        thinkTimer = setTimeout(showThinking, 15000);
+        const controller = new AbortController();
+        const abortTimer = setTimeout(() => controller.abort(), 120000);
+        const mergedOpts = Object.assign({}, opts, { signal: controller.signal });
+        return _origFetch(url, mergedOpts)
+          .then(function(res) { clearThinking(); clearTimeout(abortTimer); return res; })
+          .catch(function(err) { clearThinking(); clearTimeout(abortTimer); throw err; });
       }
-    });
-    const tryObserve = setInterval(() => {
-      const msgList = document.querySelector('.chat-messages-list');
-      if (msgList) { observer.observe(msgList, { childList: true, subtree: true }); clearInterval(tryObserve); }
-    }, 300);
-  });
+      return _origFetch(url, opts);
+    };
+  })();
 </script>
 
 <script type="module">
