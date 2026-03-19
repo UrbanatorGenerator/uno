@@ -249,6 +249,20 @@
   </footer>
 </main>
 
+<script>
+  // Extend fetch timeout to 120s for slow AI responses (Sales Expert ~60s)
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts = {}) {
+    if (typeof url === 'string' && url.includes('n8n.cloud')) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 120000);
+      return _origFetch(url, { ...opts, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
+    }
+    return _origFetch(url, opts);
+  };
+</script>
+
 <script type="module">
   import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
 
