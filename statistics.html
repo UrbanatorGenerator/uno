@@ -210,15 +210,35 @@
 
 <div class="ticker-bar">
   <div class="ticker-track" id="tickerTrack">
-    <span class="ticker-item">OMXSPI <span class="tv" id="t-omxspi">—</span></span>
-    <span class="ticker-sep">·</span>
     <span class="ticker-item">S&amp;P 500 <span class="tv" id="t-spx">—</span></span>
     <span class="ticker-sep">·</span>
     <span class="ticker-item">FTSE 100 <span class="tv" id="t-ftse">—</span></span>
     <span class="ticker-sep">·</span>
     <span class="ticker-item">DAX <span class="tv" id="t-dax">—</span></span>
     <span class="ticker-sep">·</span>
+    <span class="ticker-item">OMXSPI <span class="tv" id="t-omxspi">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">OMXS30 <span class="tv" id="t-omxs30">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">NIKKEI <span class="tv" id="t-nikkei">—</span></span>
+    <span class="ticker-sep">·</span>
     <span class="ticker-item">EUR/USD <span class="tv" id="t-eurusd">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">GBP/USD <span class="tv" id="t-gbpusd">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">EUR/CHF <span class="tv" id="t-eurchf">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">EUR/JPY <span class="tv" id="t-eurjpy">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">USD/CHF <span class="tv" id="t-usdchf">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">USD/JPY <span class="tv" id="t-usdjpy">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">USD/SEK <span class="tv" id="t-usdsek">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">USD/DKK <span class="tv" id="t-usddkk">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">USD/NOK <span class="tv" id="t-usdnok">—</span></span>
   </div>
 </div>
 
@@ -351,11 +371,8 @@
     try {
       const r = await fetch(TICKER_API);
       const d = await r.json();
-      if (d.omxspi) setTicker('t-omxspi', d.omxspi.price, d.omxspi.change);
-      if (d.spx)    setTicker('t-spx',    d.spx.price,    d.spx.change);
-      if (d.ftse)   setTicker('t-ftse',   d.ftse.price,   d.ftse.change);
-      if (d.dax)    setTicker('t-dax',    d.dax.price,    d.dax.change);
-      if (d.eurusd) setTicker('t-eurusd', d.eurusd.price, d.eurusd.change);
+      const pairs = ['spx','ftse','dax','omxspi','omxs30','nikkei','eurusd','gbpusd','eurchf','eurjpy','usdchf','usdjpy','usdsek','usddkk','usdnok'];
+      pairs.forEach(k => { if (d[k]) setTicker('t-'+k, d[k].price, d[k].change); });
     } catch(e) {}
   }
 
