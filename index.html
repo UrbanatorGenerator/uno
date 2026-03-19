@@ -265,7 +265,7 @@
         if (msgList.querySelector('.uno-thinking')) return;
         const el = document.createElement('div');
         el.className = 'chat-message from-bot uno-thinking';
-        el.style.cssText = 'opacity:0.72; font-style:italic; font-size:13px; padding:8px 14px; margin:4px 0;';
+        el.style.cssText = 'opacity:0.85; font-style:italic; font-size:13px; padding:8px 14px; margin:4px 0; color:#000000;';
         el.textContent = '⏳ I\'m digging into this — expert queries can take up to 60 seconds.';
         msgList.appendChild(el);
         msgList.scrollTop = msgList.scrollHeight;
