@@ -250,14 +250,34 @@
 </main>
 
 <script>
-  // Extend fetch timeout to 120s for slow AI responses (Sales Expert ~60s)
+  // Extend fetch timeout to 120s + inject "thinking" message after 15s
   const _origFetch = window.fetch;
   window.fetch = function(url, opts = {}) {
     if (typeof url === 'string' && url.includes('n8n.cloud')) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 120000);
+      const abortTimer = setTimeout(() => controller.abort(), 120000);
+
+      // After 15s still waiting → inject a thinking message
+      const thinkTimer = setTimeout(() => {
+        const msgList = document.querySelector('.chat-messages-list');
+        if (!msgList) return;
+        // Only inject if last message is not already a thinking note
+        if (msgList.querySelector('.uno-thinking')) return;
+        const el = document.createElement('div');
+        el.className = 'chat-message from-bot uno-thinking';
+        el.style.cssText = 'opacity:0.72; font-style:italic; font-size:13px; padding:8px 14px; margin:4px 0;';
+        el.textContent = '⏳ I\'m digging into this — expert queries can take up to 60 seconds.';
+        msgList.appendChild(el);
+        msgList.scrollTop = msgList.scrollHeight;
+      }, 15000);
+
       return _origFetch(url, { ...opts, signal: controller.signal })
-        .finally(() => clearTimeout(timer));
+        .finally(() => {
+          clearTimeout(abortTimer);
+          clearTimeout(thinkTimer);
+          // Remove thinking message once response arrives
+          document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
+        });
     }
     return _origFetch(url, opts);
   };
