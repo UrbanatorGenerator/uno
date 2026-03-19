@@ -189,7 +189,7 @@
       align-items: center;
       gap: 24px;
       white-space: nowrap;
-      animation: ticker-scroll 50s linear infinite;
+      animation: ticker-scroll 75s linear infinite;
       padding-left: 100%;
     }
     @keyframes ticker-scroll {
@@ -463,7 +463,7 @@
     if (!el) return;
     if (change === undefined || change === null) { el.textContent = price; el.className = 'tv'; return; }
     const sign = change >= 0 ? '+' : '';
-    el.textContent = price + ' (' + sign + change.toFixed(2) + '%)';
+    el.textContent = sign + change.toFixed(2) + '%';
     el.className = 'tv ' + (change >= 0 ? 'up' : 'down');
   }
 
