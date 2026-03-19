@@ -441,16 +441,17 @@
 </script>
 <!-- Dashboard Explained Modal -->
 <div id="dashModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;">
-  <div style="background:#1a2744;border-radius:12px;padding:32px;max-width:480px;width:90%;color:#fdf9f3;position:relative;border:1px solid rgba(255,255,255,0.12);max-height:80vh;overflow-y:auto;">
+  <div style="background:#1a2744;border-radius:12px;padding:32px;max-width:520px;width:90%;color:#fdf9f3;position:relative;border:1px solid rgba(255,255,255,0.12);max-height:80vh;overflow-y:auto;">
     <button onclick="document.getElementById('dashModal').style.display='none'" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#fdf9f3;font-size:20px;cursor:pointer;opacity:0.6;">✕</button>
-    <h2 style="font-size:18px;margin-bottom:16px;">📈 Dashboard Explained</h2>
-    <p style="font-size:14px;line-height:1.7;opacity:0.85;"><strong>Conversations Today</strong> — Number of chat sessions initiated on the web interface today.</p>
-    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Cost Today</strong> — Estimated API cost in USD for all AI interactions today (Claude + tools).</p>
-    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Tokens Today</strong> — Total tokens consumed today across all channels (web + Telegram).</p>
-    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Total Cost</strong> — Cumulative API cost since tracking began.</p>
-    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Cost chart</strong> — Daily cost trend over the last 14 days.</p>
-    <p style="font-size:14px;line-height:1.7;opacity:0.85;margin-top:10px;"><strong>Channel chart</strong> — Distribution of usage between web chat and Telegram.</p>
-    <p style="font-size:12px;margin-top:20px;opacity:0.5;">Data updates every time a conversation completes. Market data refreshes every 15 min.</p>
+    <h2 style="font-size:18px;margin-bottom:20px;">📈 What is this dashboard?</h2>
+    <p style="font-size:14px;line-height:1.75;opacity:0.9;">This is a statistics dashboard for an AI chatbot. It shows how much the chatbot is being used and what it costs to run it — updated in real time.</p>
+    <p style="font-size:14px;line-height:1.75;opacity:0.85;margin-top:14px;"><strong>Conversations</strong> are simply the number of times a user has started a chat with the bot. More conversations means more people are using it.</p>
+    <p style="font-size:14px;line-height:1.75;opacity:0.85;margin-top:14px;"><strong>Tokens</strong> are how AI measures text. Every word (or part of a word) you type, and every word the AI responds with, counts as tokens. The more you chat, the more tokens are used — and tokens cost money.</p>
+    <p style="font-size:14px;line-height:1.75;opacity:0.85;margin-top:14px;"><strong>Cost</strong> is directly tied to tokens. The company that provides the AI (in this case Anthropic/Claude) charges per token, so the cost goes up the more people use the chatbot.</p>
+    <p style="font-size:14px;line-height:1.75;opacity:0.85;margin-top:14px;"><strong>The bar chart</strong> shows how the daily cost has changed over the past two weeks. You can spot busy days where costs spike higher than normal.</p>
+    <p style="font-size:14px;line-height:1.75;opacity:0.85;margin-top:14px;"><strong>The donut chart</strong> shows which platforms people use to talk to the chatbot — for example via a website chat or through Telegram (a messaging app).</p>
+    <p style="font-size:14px;line-height:1.75;opacity:0.85;margin-top:14px;"><strong>Total cost</strong> is the running bill since the chatbot was first launched — a useful number for whoever is paying for it to keep track of the overall spend.</p>
+    <p style="font-size:14px;line-height:1.75;opacity:0.7;margin-top:20px;font-style:italic;">In short: this dashboard gives the person running the chatbot a quick overview of usage, costs, and where their users are coming from.</p>
   </div>
 </div>
 </body>
