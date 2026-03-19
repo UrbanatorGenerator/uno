@@ -250,37 +250,39 @@
 </main>
 
 <script>
-  // Extend fetch timeout to 120s + inject "thinking" message after 15s
-  const _origFetch = window.fetch;
-  window.fetch = function(url, opts = {}) {
-    if (typeof url === 'string' && url.includes('n8n.cloud')) {
-      const controller = new AbortController();
-      const abortTimer = setTimeout(() => controller.abort(), 120000);
-
-      // After 15s still waiting → inject a thinking message
-      const thinkTimer = setTimeout(() => {
-        const msgList = document.querySelector('.chat-messages-list');
-        if (!msgList) return;
-        // Only inject if last message is not already a thinking note
-        if (msgList.querySelector('.uno-thinking')) return;
-        const el = document.createElement('div');
-        el.className = 'chat-message from-bot uno-thinking';
-        el.style.cssText = 'opacity:0.85; font-style:italic; font-size:13px; padding:8px 14px; margin:4px 0; color:#000000;';
-        el.textContent = '⏳ I\'m digging into this — expert queries can take up to 60 seconds.';
-        msgList.appendChild(el);
-        msgList.scrollTop = msgList.scrollHeight;
-      }, 15000);
-
-      return _origFetch(url, { ...opts, signal: controller.signal })
-        .finally(() => {
-          clearTimeout(abortTimer);
-          clearTimeout(thinkTimer);
-          // Remove thinking message once response arrives
-          document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
-        });
-    }
-    return _origFetch(url, opts);
-  };
+  // Show thinking message 15s after user sends a message (no fetch wrapping)
+  let thinkTimer = null;
+  document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver(() => {
+      const msgList = document.querySelector('.chat-messages-list');
+      if (!msgList) return;
+      const msgs = msgList.querySelectorAll('.chat-message');
+      if (!msgs.length) return;
+      const last = msgs[msgs.length - 1];
+      // User just sent a message — start timer
+      if (last.classList.contains('from-user') || last.classList.contains('user')) {
+        clearTimeout(thinkTimer);
+        document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
+        thinkTimer = setTimeout(() => {
+          if (msgList.querySelector('.uno-thinking')) return;
+          const el = document.createElement('div');
+          el.className = 'uno-thinking';
+          el.style.cssText = 'font-style:italic; font-size:13px; padding:6px 14px; margin:4px 0; color:#000000; opacity:0.8;';
+          el.textContent = '⏳ I\'m digging into this — expert queries can take up to 60 seconds.';
+          msgList.appendChild(el);
+          msgList.scrollTop = msgList.scrollHeight;
+        }, 15000);
+      } else {
+        // Bot replied — clear timer and message
+        clearTimeout(thinkTimer);
+        document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
+      }
+    });
+    const tryObserve = setInterval(() => {
+      const msgList = document.querySelector('.chat-messages-list');
+      if (msgList) { observer.observe(msgList, { childList: true, subtree: true }); clearInterval(tryObserve); }
+    }, 300);
+  });
 </script>
 
 <script type="module">
