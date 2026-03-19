@@ -252,15 +252,24 @@
 <script>
   // Show thinking message 15s after user sends a message (no fetch wrapping)
   let thinkTimer = null;
+  let lastMsgCount = 0;
   document.addEventListener('DOMContentLoaded', () => {
     const observer = new MutationObserver(() => {
       const msgList = document.querySelector('.chat-messages-list');
       if (!msgList) return;
       const msgs = msgList.querySelectorAll('.chat-message');
-      if (!msgs.length) return;
-      const last = msgs[msgs.length - 1];
-      // User just sent a message — hide starters + start timer
-      if (last.classList.contains('from-user') || last.classList.contains('user')) {
+      const count = msgs.length;
+      if (count === lastMsgCount) return;
+      lastMsgCount = count;
+      const last = msgs[count - 1];
+
+      // Detect bot reply: has any class containing "bot", "assistant", "agent", or "system"
+      const isBotMsg = [...last.classList].some(c =>
+        /bot|assistant|agent|system/i.test(c)
+      );
+
+      if (!isBotMsg && count > 0) {
+        // Likely a user message — hide starters + start thinking timer
         document.querySelectorAll('.chat-starters').forEach(e => e.remove());
         clearTimeout(thinkTimer);
         document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
@@ -268,13 +277,13 @@
           if (msgList.querySelector('.uno-thinking')) return;
           const el = document.createElement('div');
           el.className = 'uno-thinking';
-          el.style.cssText = 'font-style:italic; font-size:13px; padding:6px 14px; margin:4px 0; color:#000000; opacity:0.8;';
+          el.style.cssText = 'font-style:italic; font-size:13px; padding:6px 14px; margin:4px 0; color:#000000; opacity:0.85;';
           el.textContent = '⏳ I\'m digging into this — expert queries can take up to 60 seconds.';
           msgList.appendChild(el);
           msgList.scrollTop = msgList.scrollHeight;
         }, 15000);
       } else {
-        // Bot replied — clear timer and message
+        // Bot replied — clear timer and thinking message
         clearTimeout(thinkTimer);
         document.querySelectorAll('.uno-thinking').forEach(e => e.remove());
       }
