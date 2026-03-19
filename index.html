@@ -167,6 +167,43 @@
     }
     .stats-link:hover { opacity: 1; }
 
+    /* Market ticker */
+    .ticker-bar {
+      background: #bc282f;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      height: 30px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      letter-spacing: 0.2px;
+    }
+    .ticker-track {
+      display: inline-flex;
+      align-items: center;
+      gap: 24px;
+      white-space: nowrap;
+      animation: ticker-scroll 30s linear infinite;
+      padding-left: 100%;
+    }
+    @keyframes ticker-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-100%); }
+    }
+    .ticker-bar:hover .ticker-track { animation-play-state: paused; }
+    .ticker-item { display: inline-flex; gap: 6px; }
+    .ticker-sep { opacity: 0.4; }
+    .tv { font-weight: 400; }
+    .tv.up   { color: #90ee90; }
+    .tv.down { color: #ffaaaa; }
+    body { padding-bottom: 30px; }
+
     /* ── CHAT STARTERS ── */
     .chat-starters {
       display: flex;
@@ -248,6 +285,20 @@
     <a href="statistics.html" class="stats-link">Statistics</a>
   </footer>
 </main>
+
+<div class="ticker-bar">
+  <div class="ticker-track" id="tickerTrack">
+    <span class="ticker-item">OMXSPI <span class="tv" id="t-omxspi">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">S&amp;P 500 <span class="tv" id="t-spx">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">FTSE 100 <span class="tv" id="t-ftse">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">DAX <span class="tv" id="t-dax">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">EUR/USD <span class="tv" id="t-eurusd">—</span></span>
+  </div>
+</div>
 
 <script>
   // Show thinking message 15s after user sends a message (no fetch wrapping)
@@ -385,5 +436,52 @@
   // Statistics moved to statistics.html
 </script>
 
+<script>
+(function() {
+  function setTicker(id, price, change) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const sign = change >= 0 ? '+' : '';
+    el.textContent = price + ' (' + sign + change.toFixed(2) + '%)';
+    el.className = 'tv ' + (change >= 0 ? 'up' : 'down');
+  }
+
+  async function fetchYahoo(symbol, elId) {
+    try {
+      const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?interval=1d&range=1d';
+      const r = await fetch(url);
+      const d = await r.json();
+      const meta = d.chart.result[0].meta;
+      const price = meta.regularMarketPrice.toFixed(2);
+      const prev  = meta.chartPreviousClose || meta.previousClose;
+      const chg   = ((meta.regularMarketPrice - prev) / prev) * 100;
+      setTicker(elId, price, chg);
+    } catch(e) { /* silently keep — */ }
+  }
+
+  async function fetchEURUSD() {
+    try {
+      const r = await fetch('https://open.er-api.com/v6/latest/EUR');
+      const d = await r.json();
+      const rate = d.rates.USD;
+      // no prev close from this API — show rate only
+      const el = document.getElementById('t-eurusd');
+      if (el) { el.textContent = rate.toFixed(4); el.className = 'tv'; }
+    } catch(e) {}
+  }
+
+  function loadTicker() {
+    fetchYahoo('^OMXSPI', 't-omxspi');
+    fetchYahoo('^GSPC',   't-spx');
+    fetchYahoo('^FTSE',   't-ftse');
+    fetchYahoo('^GDAXI',  't-dax');
+    fetchEURUSD();
+  }
+
+  document.addEventListener('DOMContentLoaded', loadTicker);
+  // Refresh every 5 minutes
+  setInterval(loadTicker, 5 * 60 * 1000);
+})();
+</script>
 </body>
 </html>
