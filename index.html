@@ -438,48 +438,30 @@
 
 <script>
 (function() {
+  const TICKER_API = 'https://urbanator25.app.n8n.cloud/webhook/market-ticker';
+
   function setTicker(id, price, change) {
     const el = document.getElementById(id);
     if (!el) return;
+    if (change === undefined) { el.textContent = price; el.className = 'tv'; return; }
     const sign = change >= 0 ? '+' : '';
-    el.textContent = price + ' (' + sign + change.toFixed(2) + '%)';
+    el.textContent = price + ' (' + sign + change + '%)';
     el.className = 'tv ' + (change >= 0 ? 'up' : 'down');
   }
 
-  async function fetchYahoo(symbol, elId) {
+  async function loadTicker() {
     try {
-      const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?interval=1d&range=1d';
-      const r = await fetch(url);
+      const r = await fetch(TICKER_API);
       const d = await r.json();
-      const meta = d.chart.result[0].meta;
-      const price = meta.regularMarketPrice.toFixed(2);
-      const prev  = meta.chartPreviousClose || meta.previousClose;
-      const chg   = ((meta.regularMarketPrice - prev) / prev) * 100;
-      setTicker(elId, price, chg);
-    } catch(e) { /* silently keep — */ }
-  }
-
-  async function fetchEURUSD() {
-    try {
-      const r = await fetch('https://open.er-api.com/v6/latest/EUR');
-      const d = await r.json();
-      const rate = d.rates.USD;
-      // no prev close from this API — show rate only
-      const el = document.getElementById('t-eurusd');
-      if (el) { el.textContent = rate.toFixed(4); el.className = 'tv'; }
+      if (d.omxspi) setTicker('t-omxspi', d.omxspi.price, d.omxspi.change);
+      if (d.spx)    setTicker('t-spx',    d.spx.price,    d.spx.change);
+      if (d.ftse)   setTicker('t-ftse',   d.ftse.price,   d.ftse.change);
+      if (d.dax)    setTicker('t-dax',    d.dax.price,    d.dax.change);
+      if (d.eurusd) setTicker('t-eurusd', d.eurusd.price, d.eurusd.change);
     } catch(e) {}
   }
 
-  function loadTicker() {
-    fetchYahoo('^OMXSPI', 't-omxspi');
-    fetchYahoo('^GSPC',   't-spx');
-    fetchYahoo('^FTSE',   't-ftse');
-    fetchYahoo('^GDAXI',  't-dax');
-    fetchEURUSD();
-  }
-
   document.addEventListener('DOMContentLoaded', loadTicker);
-  // Refresh every 5 minutes
   setInterval(loadTicker, 5 * 60 * 1000);
 })();
 </script>
