@@ -13,28 +13,19 @@ symbols = {
 
 data = {}
 
-try:
-    tickers = yf.download(
-        list(symbols.keys()),
-        period='5d', interval='1d',
-        auto_adjust=False, progress=False
-    )
-    closes = tickers['Close']
-    for sym, key in symbols.items():
-        try:
-            prices = closes[sym].dropna()
-            if len(prices) >= 2:
-                price = float(prices.iloc[-1])
-                prev  = float(prices.iloc[-2])
-                chg   = (price - prev) / prev * 100
-                data[key] = {
-                    'price': f'{price:,.2f}',
-                    'change': round(chg, 2)
-                }
-        except Exception as e:
-            print(f"Skip {sym}: {e}")
-except Exception as e:
-    print(f"Index fetch error: {e}")
+for sym, key in symbols.items():
+    try:
+        fi = yf.Ticker(sym).fast_info
+        price = fi.last_price
+        prev  = fi.previous_close
+        if price and prev:
+            chg = (price - prev) / prev * 100
+            data[key] = {
+                'price': f'{price:,.2f}',
+                'change': round(chg, 2)
+            }
+    except Exception as e:
+        print(f"Skip {sym}: {e}")
 
 try:
     r = requests.get('https://open.er-api.com/v6/latest/EUR', timeout=10)
