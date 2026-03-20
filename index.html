@@ -508,22 +508,82 @@
     'For best advice address my experts'
   ];
 
+  const CANNED_ANSWERS = {
+    'What can you help me with?':
+      `I'm Uno — your AI-powered Powersales assistant. Here's what I can do:<br><br>
+       📊 <strong>Sales & Strategy</strong> — Cold call prep, sales letters, objection handling, closing techniques<br>
+       🎯 <strong>Expert Panel</strong> — Consult the Sales Expert, Board of Directors, or content specialists<br>
+       📅 <strong>Calendar & Email</strong> — Schedule meetings, draft and send emails<br>
+       ✅ <strong>Todo & Contacts</strong> — Manage tasks and your contact database<br>
+       🔍 <strong>Research</strong> — Deep-dive on companies, people or markets<br><br>
+       Just ask me anything — I'm here to help you close more deals. 🚀`,
+
+    'How do I warm up a cold call?':
+      `Great question! Here's a proven warm-up framework:<br><br>
+       🔍 <strong>Before the call</strong><br>
+       &bull; Research on LinkedIn — recent posts, job changes, company news<br>
+       &bull; Find a genuine trigger event or connection point<br>
+       &bull; Prepare a one-line value statement specific to their role<br><br>
+       📞 <strong>Opening (first 10 seconds)</strong><br>
+       &bull; Use their name + a specific reference: <em>"Hi [Name], I noticed your company just [trigger]…"</em><br>
+       &bull; Lead with curiosity — not a pitch<br><br>
+       🤝 <strong>Build rapport fast</strong><br>
+       &bull; Mirror their energy and pace<br>
+       &bull; Ask one smart question that shows you've done your homework<br><br>
+       Want me to craft a specific opener for your next call? Tell me about the prospect!`,
+
+    'Help me with a great sales letter.':
+      `Happy to help! To write a letter that converts, I need a few details:<br><br>
+       1. <strong>Who's the audience?</strong> (title, industry, company size)<br>
+       2. <strong>What's the offer?</strong> (product, service, or meeting request)<br>
+       3. <strong>What's their main pain point?</strong><br>
+       4. <strong>Tone?</strong> (formal, conversational, urgent)<br><br>
+       Share those details and I'll write a punchy, persuasive letter you can send straight away. 🚀`,
+
+    'For best advice address my experts':
+      `Our expert panel is standing by! Here's who you can consult:<br><br>
+       🧠 <strong>Sales Expert</strong> — Closing techniques, negotiation, deal strategy<br>
+       👔 <strong>Board of Directors</strong> — High-level business and strategic advice<br>
+       ✍️ <strong>Social Copy Writer</strong> — LinkedIn posts and social media content<br>
+       📰 <strong>Newsletter Engine</strong> — Email campaigns and newsletters<br>
+       💼 <strong>LinkedIn Post Manager</strong> — Profile optimisation and post strategy<br><br>
+       Just describe your challenge and I'll route you to the right expert. What's on your agenda?`
+  };
+
+  function injectCannedReply(question, answer) {
+    const msgList = document.querySelector('.chat-messages-list');
+    if (!msgList) return;
+    // User bubble
+    const userEl = document.createElement('div');
+    userEl.style.cssText = 'display:flex;justify-content:flex-end;padding:6px 16px 2px;';
+    userEl.innerHTML = `<div style="background:#1c5070;color:#fff;border-radius:18px 18px 4px 18px;padding:10px 16px;max-width:82%;font-size:14px;line-height:1.5;">${question}</div>`;
+    msgList.appendChild(userEl);
+    // Bot bubble
+    const botEl = document.createElement('div');
+    botEl.style.cssText = 'display:flex;justify-content:flex-start;padding:2px 16px 6px;';
+    botEl.innerHTML = `<div style="background:#f1f5f9;color:#1a1a2e;border-radius:18px 18px 18px 4px;padding:12px 16px;max-width:85%;font-size:14px;line-height:1.65;">${answer}</div>`;
+    msgList.appendChild(botEl);
+    msgList.scrollTop = msgList.scrollHeight;
+  }
+
   function sendStarterMessage(text) {
+    document.querySelectorAll('.chat-starters').forEach(e => e.remove());
+    const canned = CANNED_ANSWERS[text];
+    if (canned) {
+      injectCannedReply(text, canned);
+      return; // No webhook call needed
+    }
+    // Fallback: send via webhook
     const section = document.querySelector('#uno-chat-section');
     const textarea = section && section.querySelector('textarea');
     const sendBtn  = section && section.querySelector('button[type="submit"], .chat-input-send-button, button.send');
     if (!textarea) return;
-    // Set value and trigger Vue reactivity
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
     nativeInputValueSetter.call(textarea, text);
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    // Click send after short delay
     setTimeout(() => {
       if (sendBtn) sendBtn.click();
       else textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-      // Hide starters after use
-      const starters = document.querySelector('.chat-starters');
-      if (starters) starters.remove();
     }, 50);
   }
 
