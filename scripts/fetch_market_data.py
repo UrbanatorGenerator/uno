@@ -16,7 +16,7 @@ data = {}
 try:
     tickers = yf.download(
         list(symbols.keys()),
-        period='2d', interval='1d',
+        period='5d', interval='1d',
         auto_adjust=False, progress=False
     )
     closes = tickers['Close']
