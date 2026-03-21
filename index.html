@@ -614,6 +614,24 @@
     if (document.querySelector('.chat-starters')) clearInterval(startersTimer);
   }, 200);
 
+  // MutationObserver backup: remove starters as soon as any new chat bubble appears
+  (function() {
+    function removeStarters() {
+      document.querySelectorAll('.chat-starters').forEach(e => e.remove());
+    }
+    function tryObserveMessages() {
+      const msgList = document.querySelector('.chat-messages-list, .chat-messages, [class*="messages-list"]');
+      if (!msgList) return false;
+      let initialCount = msgList.querySelectorAll('.chat-message, [class*="chat-message"]').length;
+      new MutationObserver(() => {
+        const count = msgList.querySelectorAll('.chat-message, [class*="chat-message"]').length;
+        if (count > initialCount) { removeStarters(); initialCount = count; }
+      }).observe(msgList, { childList: true, subtree: true });
+      return true;
+    }
+    const obs = setInterval(() => { if (tryObserveMessages()) clearInterval(obs); }, 300);
+  })();
+
   createChat({
     webhookUrl: 'https://urbanator25.app.n8n.cloud/webhook/cb38e6b8-379b-4791-b161-7e79e148f0e2/chat',
     mode: 'fullscreen',
