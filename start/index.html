@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uno – Din personliga AI-assistent</title>
+  <link rel="icon" type="image/png" href="../favicon.png" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #1c5070;
+      --bg-dark: #163d56;
+      --bg-card: #1a4a66;
+      --bg-card2: #153d56;
+      --border: rgba(255,255,255,0.08);
+      --text: #e8f4f8;
+      --text-muted: rgba(232,244,248,0.55);
+      --blue: #3b82f6;
+      --blue-hover: #2563eb;
+      --green: #10b981;
+      --gold: #f59e0b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-left { display: flex; align-items: center; gap: 12px; }
+    .nav-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      object-fit: cover; border: 2px solid rgba(255,255,255,0.15);
+    }
+    .nav-title { font-size: 18px; font-weight: 700; color: #fdf9f3; }
+    .nav-title span { color: var(--blue); }
+    .nav-login {
+      font-size: 14px; color: var(--text-muted);
+      text-decoration: none; padding: 8px 16px;
+      border: 1px solid var(--border); border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .nav-login:hover { border-color: var(--blue); color: var(--text); }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 80px 24px 60px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      color: #fdf9f3;
+      margin-bottom: 20px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--blue);
+    }
+    .hero p {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto 36px;
+    }
+    .hero-cta {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary:hover { background: var(--blue-hover); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-muted);
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: rgba(255,255,255,0.25); color: var(--text); }
+
+    /* FEATURES */
+    .features {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 24px 60px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .feature-icon { font-size: 28px; margin-bottom: 12px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #fdf9f3; }
+    .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+    /* PRICING */
+    .pricing-section {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+    .pricing-section h2 {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #fdf9f3;
+    }
+    .pricing-section .sub {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 580px) { .pricing-grid { grid-template-columns: 1fr; } }
+    .pricing-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .pricing-card.featured {
+      border-color: var(--blue);
+      background: var(--bg-card2);
+      position: relative;
+    }
+    .featured-tag {
+      position: absolute;
+      top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--blue);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+    }
+    .pricing-name { font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .pricing-price { font-size: 42px; font-weight: 800; color: #fdf9f3; letter-spacing: -1px; line-height: 1; }
+    .pricing-price span { font-size: 16px; font-weight: 400; color: var(--text-muted); }
+    .pricing-desc { font-size: 14px; color: var(--text-muted); margin: 12px 0 20px; }
+    .pricing-features { list-style: none; }
+    .pricing-features li {
+      font-size: 14px; color: var(--text);
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .pricing-features li:last-child { border-bottom: none; }
+    .check { color: var(--green); font-size: 15px; }
+    .pricing-btn {
+      display: block;
+      text-align: center;
+      margin-top: 24px;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+    }
+    .pricing-btn-outline {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+    }
+    .pricing-btn-outline:hover { border-color: rgba(255,255,255,0.25); color: var(--text); }
+    .pricing-btn-primary { background: var(--blue); color: white; }
+    .pricing-btn-primary:hover { background: var(--blue-hover); }
+
+    /* FORM SECTION */
+    .form-section {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 0 24px 100px;
+    }
+    .form-section h2 {
+      text-align: center;
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #fdf9f3;
+    }
+    .form-section .sub {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+    .spots-left {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--gold);
+      font-weight: 600;
+      margin-bottom: 28px;
+    }
+    .spots-dot {
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+    }
+    .form-group { margin-bottom: 20px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    input, textarea {
+      width: 100%;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--text);
+      font-family: inherit;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    input:focus, textarea:focus { border-color: var(--blue); }
+    textarea { resize: vertical; min-height: 100px; }
+    input::placeholder, textarea::placeholder { color: var(--text-muted); }
+    .submit-btn {
+      width: 100%;
+      background: var(--blue);
+      color: white;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 4px;
+    }
+    .submit-btn:hover { background: var(--blue-hover); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .form-note {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 16px;
+    }
+
+    /* SUCCESS STATE */
+    .success-msg {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .success-msg .emoji { font-size: 48px; margin-bottom: 16px; }
+    .success-msg h3 { font-size: 22px; font-weight: 700; color: #fdf9f3; margin-bottom: 8px; }
+    .success-msg p { color: var(--text-muted); font-size: 15px; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    footer a { color: var(--text-muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    /* DIVIDER */
+    .divider {
+      max-width: 900px;
+      margin: 0 auto 60px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 700;
+      color: #fdf9f3;
+      padding: 0 24px;
+    }
+    .divider span { color: var(--text-muted); font-size: 15px; font-weight: 400; display: block; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-left">
+      <img src="../Uno_lowres2.png" alt="Uno" class="nav-avatar" />
+      <div class="nav-title">Uno <span>Powersales</span></div>
+    </div>
+    <a href="/" class="nav-login">Logga in →</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">Beta · 5 platser</div>
+    <h1>Din personliga<br>AI-assistent som<br><em>faktiskt känner dig.</em></h1>
+    <p>Uno hanterar din e-post, kalender och todo-lista — och briefar dig morgon och kväll med det som är viktigt.</p>
+    <div class="hero-cta">
+      <a href="#beta" class="btn-primary">Ansök om beta-plats</a>
+      <a href="#hur" class="btn-secondary">Så här funkar det</a>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <div class="divider" id="hur">
+    Vad Uno gör åt dig
+    <span>Integrerat med dina verktyg, anpassat till dig</span>
+  </div>
+  <section class="features">
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <h3>Chatta med Uno</h3>
+      <p>Ställ frågor, be om hjälp, få svar direkt — via webb eller Telegram.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌅</div>
+      <h3>Morning & Evening Brief</h3>
+      <p>Personlig sammanfattning varje dag. Väder, kalender, nyheter, AI och todo — direkt i din inkorg.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📧</div>
+      <h3>E-posthantering</h3>
+      <p>Uno klassar inkommande mejl, skriver svarsutkast och sorterar direkt i Gmail.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">✅</div>
+      <h3>Todo & Beslut</h3>
+      <p>Håll koll på vad som ska göras. Uno hjälper dig prioritera och fatta bättre beslut.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <h3>Kalender & Möten</h3>
+      <p>Uno ser din kalender och förbereder dig inför möten med relevant kontext.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <h3>Minns allt om dig</h3>
+      <p>Uno bygger upp ett personligt faktaminne — ju mer du använder det, desto bättre blir det.</p>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing-section">
+    <h2>Enkla priser</h2>
+    <p class="sub">Börja gratis. Uppgradera när du vill ha mer.</p>
+    <div class="pricing-grid">
+
+      <div class="pricing-card">
+        <div class="pricing-name">Free</div>
+        <div class="pricing-price">0 <span>kr/mån</span></div>
+        <div class="pricing-desc">Perfekt för att testa Uno.</div>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span> Webbchatt med Uno</li>
+          <li><span class="check">✓</span> 8 frågor per dag</li>
+          <li><span class="check">✓</span> Nyheter &amp; research</li>
+          <li><span class="check">✓</span> Väder &amp; kalenderöversikt</li>
+        </ul>
+        <a href="/" class="pricing-btn pricing-btn-outline">Skapa gratis konto</a>
+      </div>
+
+      <div class="pricing-card featured">
+        <div class="featured-tag">Beta · 5 platser</div>
+        <div class="pricing-name">Personlig</div>
+        <div class="pricing-price">349 <span>kr/mån</span></div>
+        <div class="pricing-desc">Allt i Free, plus fullständig integration.</div>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span> Telegram-integration</li>
+          <li><span class="check">✓</span> Morning &amp; Evening Brief</li>
+          <li><span class="check">✓</span> Gmail + Kalender kopplat</li>
+          <li><span class="check">✓</span> E-postklassning &amp; utkast</li>
+          <li><span class="check">✓</span> Todo &amp; beslutsstöd</li>
+          <li><span class="check">✓</span> Personligt minne</li>
+        </ul>
+        <button class="pricing-btn pricing-btn-primary" onclick="document.getElementById('beta').scrollIntoView({behavior:'smooth'})">Ansök om beta-plats</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BETA FORM -->
+  <section class="form-section" id="beta">
+    <h2>Ansök om beta-plats</h2>
+    <p class="sub">Vi granskar varje ansökan och hör av oss inom 48 timmar.</p>
+    <div class="spots-left">
+      <div class="spots-dot"></div>
+      5 platser kvar av 5
+    </div>
+
+    <div class="form-card">
+      <div id="form-container">
+        <div class="form-group">
+          <label for="name">Ditt namn</label>
+          <input type="text" id="name" placeholder="Förnamn Efternamn" required />
+        </div>
+        <div class="form-group">
+          <label for="email">E-post</label>
+          <input type="email" id="email" placeholder="du@dindomän.se" required />
+        </div>
+        <div class="form-group">
+          <label for="message">Varför vill du ha Uno?</label>
+          <textarea id="message" placeholder="Berätta lite om dig och hur du tänker använda Uno..."></textarea>
+        </div>
+        <button class="submit-btn" id="submit-btn" onclick="submitForm()">Skicka ansökan</button>
+        <p class="form-note">Ingen spam. Vi hör av oss inom 48h.</p>
+      </div>
+
+      <div class="success-msg" id="success-msg">
+        <div class="emoji">🎉</div>
+        <h3>Ansökan mottagen!</h3>
+        <p>Tack! Vi hör av oss till din e-post inom 48 timmar.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>Uno drivs av Claude AI (Anthropic) &nbsp;·&nbsp; Din data stannar hos dig &nbsp;·&nbsp; <a href="/">Logga in</a></p>
+    <p style="margin-top:8px;">© 2026 Powersales AB</p>
+  </footer>
+
+  <!-- SUPABASE -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ⚠️ Fyll i dina Supabase-credentials här
+    const SUPABASE_URL = 'https://jplwxsimeeupzqvnjcfx.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwbHd4c2ltZWV1cHpxdm5qY2Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjMxMjksImV4cCI6MjA4NzE5OTEyOX0.9shpHeD0cq2aCokl5VZ8l0D6l_cP9gJ1yKgQs97EqMA';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function submitForm() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const message = document.getElementById('message').value.trim();
+
+      if (!name || !email) {
+        alert('Fyll i namn och e-post.');
+        return;
+      }
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Skickar...';
+
+      const { error } = await supabase
+        .from('beta_applications')
+        .insert([{ name, email, message }]);
+
+      if (error) {
+        console.error(error);
+        btn.disabled = false;
+        btn.textContent = 'Skicka ansökan';
+        alert('Något gick fel. Försök igen eller maila oss direkt.');
+        return;
+      }
+
+      document.getElementById('form-container').style.display = 'none';
+      document.getElementById('success-msg').style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>
