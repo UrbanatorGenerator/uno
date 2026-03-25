@@ -436,9 +436,24 @@
   <div class="login-card">
     <img src="Uno_lowres2.png" alt="Uno" class="login-avatar" onerror="this.style.display='none'" />
     <h2>Välkommen till Uno</h2>
-    <p>Ange din e-post så skickar vi en inloggningslänk.</p>
-    <input type="email" id="loginEmail" class="login-input" placeholder="du@exempel.se" />
-    <button class="login-btn" id="loginBtn" onclick="sendMagicLink()">Skicka inloggningslänk</button>
+
+    <!-- Steg 1: e-post -->
+    <div id="loginStep1">
+      <p>Ange din e-post så skickar vi en engångskod.</p>
+      <input type="email" id="loginEmail" class="login-input" placeholder="du@exempel.se" />
+      <button class="login-btn" id="loginBtn" onclick="sendOtp()">Skicka kod</button>
+    </div>
+
+    <!-- Steg 2: OTP-kod -->
+    <div id="loginStep2" style="display:none;">
+      <p id="loginStep2Desc">En 6-siffrig kod har skickats till din e-post.</p>
+      <input type="text" id="loginOtp" class="login-input" placeholder="123456"
+             inputmode="numeric" pattern="[0-9]*" maxlength="6"
+             style="letter-spacing:0.3em; text-align:center; font-size:22px;" />
+      <button class="login-btn" id="verifyBtn" onclick="verifyOtp()">Logga in</button>
+      <button onclick="resetLogin()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;margin-top:4px;">← Byt e-post</button>
+    </div>
+
     <div class="login-msg" id="loginMsg"></div>
     <div class="login-footer">Inget konto? <a href="/start">Skapa gratis konto</a></div>
   </div>
@@ -582,20 +597,53 @@
     document.getElementById('userBadge').classList.add('visible');
   }
 
-  async function sendMagicLink() {
+  let _otpEmail = '';
+
+  async function sendOtp() {
     const email = document.getElementById('loginEmail').value.trim();
     const msg = document.getElementById('loginMsg');
     const btn = document.getElementById('loginBtn');
     if (!email) { msg.textContent = 'Ange en e-postadress.'; msg.className = 'login-msg err'; return; }
     btn.disabled = true; btn.textContent = 'Skickar...';
     msg.textContent = ''; msg.className = 'login-msg';
-    const { error } = await _sb.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: 'https://uno.powersales.se' }
-    });
-    btn.disabled = false; btn.textContent = 'Skicka inloggningslänk';
-    if (error) { msg.textContent = 'Något gick fel. Försök igen.'; msg.className = 'login-msg err'; }
-    else { msg.textContent = '✅ Kolla din inkorg och klicka på länken!'; }
+    // shouldCreateUser: false → bara tillåtna användare kan logga in
+    const { error } = await _sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+    btn.disabled = false; btn.textContent = 'Skicka kod';
+    if (error) {
+      msg.textContent = error.message.includes('not found') || error.status === 422
+        ? 'Ingen användare hittades. Skapa ett konto nedan.'
+        : 'Något gick fel. Försök igen.';
+      msg.className = 'login-msg err';
+    } else {
+      _otpEmail = email;
+      document.getElementById('loginStep2Desc').textContent = `En 6-siffrig kod har skickats till ${email}.`;
+      document.getElementById('loginStep1').style.display = 'none';
+      document.getElementById('loginStep2').style.display = 'block';
+      msg.textContent = ''; msg.className = 'login-msg';
+      setTimeout(() => document.getElementById('loginOtp').focus(), 100);
+    }
+  }
+
+  async function verifyOtp() {
+    const token = document.getElementById('loginOtp').value.trim();
+    const msg = document.getElementById('loginMsg');
+    const btn = document.getElementById('verifyBtn');
+    if (token.length !== 6) { msg.textContent = 'Ange den 6-siffriga koden.'; msg.className = 'login-msg err'; return; }
+    btn.disabled = true; btn.textContent = 'Verifierar...';
+    msg.textContent = ''; msg.className = 'login-msg';
+    const { error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
+    btn.disabled = false; btn.textContent = 'Logga in';
+    if (error) { msg.textContent = 'Felaktig eller utgången kod. Försök igen.'; msg.className = 'login-msg err'; }
+    // success → onAuthStateChange triggas automatiskt
+  }
+
+  function resetLogin() {
+    _otpEmail = '';
+    document.getElementById('loginOtp').value = '';
+    document.getElementById('loginStep2').style.display = 'none';
+    document.getElementById('loginStep1').style.display = 'block';
+    document.getElementById('loginMsg').textContent = '';
+    document.getElementById('loginMsg').className = 'login-msg';
   }
 
   async function signOut() {
@@ -604,10 +652,17 @@
     showLogin();
   }
 
-  // Enter key i email-fältet
+  // Enter-tangenten i login-stegen
   document.addEventListener('DOMContentLoaded', () => {
-    const inp = document.getElementById('loginEmail');
-    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') sendMagicLink(); });
+    document.getElementById('loginEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') sendOtp(); });
+    document.getElementById('loginOtp')?.addEventListener('keydown', e => { if (e.key === 'Enter') verifyOtp(); });
+    // Auto-submit när 6 siffror är ifyllda
+    document.getElementById('loginOtp')?.addEventListener('input', e => {
+      if (e.target.value.replace(/\D/g,'').length === 6) {
+        e.target.value = e.target.value.replace(/\D/g,'');
+        verifyOtp();
+      }
+    });
   });
 
   // Auth state — körs vid load och vid callback från magic link
