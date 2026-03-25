@@ -492,13 +492,13 @@
   </footer>
 
   <!-- SUPABASE -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script>
-    // ⚠️ Fyll i dina Supabase-credentials här
     const SUPABASE_URL = 'https://jplwxsimeeupzqvnjcfx.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwbHd4c2ltZWV1cHpxdm5qY2Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjMxMjksImV4cCI6MjA4NzE5OTEyOX0.9shpHeD0cq2aCokl5VZ8l0D6l_cP9gJ1yKgQs97EqMA';
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function submitForm() {
       const name = document.getElementById('name').value.trim();
@@ -514,7 +514,7 @@
       btn.disabled = true;
       btn.textContent = 'Skickar...';
 
-      const { error } = await supabase
+      const { error } = await db
         .from('beta_applications')
         .insert([{ name, email, message }]);
 
