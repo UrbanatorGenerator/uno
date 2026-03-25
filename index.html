@@ -611,13 +611,19 @@
   });
 
   // Auth state — körs vid load och vid callback från magic link
+  // Polling krävs: ES-modulen (type="module") laddar asynkront och kan ha definierat
+  // window.initUnoChat EFTER att onAuthStateChange redan har triggats.
   _sb.auth.onAuthStateChange((event, session) => {
     if (session && session.user) {
       hideLogin();
       showUser(session.user.email);
       if (!_chatInitialized) {
         _chatInitialized = true;
-        if (window.initUnoChat) window.initUnoChat();
+        // Vänta tills modulen har definierat window.initUnoChat (max ~3s)
+        const tryInit = setInterval(() => {
+          if (window.initUnoChat) { clearInterval(tryInit); window.initUnoChat(); }
+        }, 50);
+        setTimeout(() => clearInterval(tryInit), 3000);
       }
     } else {
       showLogin();
@@ -796,13 +802,8 @@
     });
   };
 
-  // Init direkt om auth redan är klar (t.ex. vid sidorefresh med aktiv session)
-  _sb.auth.getSession().then(({ data: { session } }) => {
-    if (session && !_chatInitialized) {
-      _chatInitialized = true;
-      window.initUnoChat();
-    }
-  });
+  // Notering: session-check hanteras av onAuthStateChange i non-module scriptet
+  // (med polling tills window.initUnoChat är definierat). Ingen duplicate-logik här.
 </script>
 
 <script>
