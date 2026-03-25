@@ -12,6 +12,7 @@
   <link rel="apple-touch-icon" href="icon-192.png" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/@n8n/chat@1.13.2/dist/style.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -257,6 +258,62 @@
       color: #fff;
     }
 
+    /* ── LOGIN OVERLAY ── */
+    #loginOverlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(16,36,56,0.97); z-index: 500;
+      align-items: center; justify-content: center;
+    }
+    #loginOverlay.visible { display: flex; }
+    .login-card {
+      background: #1a3a52; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px; padding: 40px 36px;
+      max-width: 400px; width: 90%; text-align: center;
+    }
+    .login-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      object-fit: cover; border: 2px solid rgba(255,255,255,0.15);
+      margin-bottom: 20px;
+    }
+    .login-card h2 { font-size: 22px; font-weight: 700; color: #fdf9f3; margin-bottom: 8px; }
+    .login-card p { font-size: 14px; color: rgba(232,244,248,0.6); margin-bottom: 28px; }
+    .login-input {
+      width: 100%; background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;
+      padding: 13px 16px; font-size: 15px; color: #fdf9f3;
+      font-family: inherit; outline: none; margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .login-input:focus { border-color: #3b82f6; }
+    .login-input::placeholder { color: rgba(255,255,255,0.3); }
+    .login-btn {
+      width: 100%; background: #3b82f6; color: white;
+      padding: 13px; border-radius: 10px; font-size: 15px;
+      font-weight: 700; border: none; cursor: pointer;
+      transition: background 0.2s; margin-bottom: 16px;
+    }
+    .login-btn:hover { background: #2563eb; }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .login-msg { font-size: 14px; min-height: 20px; color: #10b981; margin-bottom: 16px; }
+    .login-msg.err { color: #ef4444; }
+    .login-footer { font-size: 13px; color: rgba(232,244,248,0.4); }
+    .login-footer a { color: #3b82f6; text-decoration: none; }
+    .login-footer a:hover { text-decoration: underline; }
+    /* User badge i header */
+    .user-badge {
+      display: none; align-items: center; gap: 8px;
+      font-size: 12px; color: rgba(253,249,243,0.6);
+    }
+    .user-badge.visible { display: flex; }
+    .user-badge span { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .logout-btn {
+      font-size: 12px; color: rgba(253,249,243,0.5);
+      background: none; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; padding: 4px 10px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .logout-btn:hover { color: #fdf9f3; border-color: rgba(255,255,255,0.35); }
+
     /* ── ERROR ── */
     .error-msg {
       font-size: 13px; color: #ef4444; padding: 12px 0;
@@ -300,6 +357,10 @@
     <h1>Uno <span class="sub">Powersales Assistant</span></h1>
   </div>
   <div class="header-right">
+    <div class="user-badge" id="userBadge">
+      <span id="userEmail"></span>
+      <button class="logout-btn" onclick="signOut()">Logga ut</button>
+    </div>
     <div class="live-badge"><div class="live-dot"></div> Live</div>
     <button class="hamburger" id="menuBtn" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -367,6 +428,19 @@
     <p style="font-size:14px;line-height:1.75;opacity:0.85;margin-bottom:10px;"><strong>Usage analytics:</strong> Anonymised usage statistics (message count, token usage, cost estimates) are logged to a private Google Sheet for operational purposes.</p>
     <p style="font-size:14px;line-height:1.75;opacity:0.85;margin-bottom:10px;"><strong>Market data:</strong> Financial data sourced from Yahoo Finance and Open Exchange Rates, delayed ~15 minutes.</p>
     <p style="font-size:14px;line-height:1.75;opacity:0.85;"><strong>No personal data is sold or shared</strong> with third parties. Questions? <a href="mailto:info@powersales.se" style="color:#3b82f6;">info@powersales.se</a></p>
+  </div>
+</div>
+
+<!-- Login Overlay -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <img src="Uno_lowres2.png" alt="Uno" class="login-avatar" onerror="this.style.display='none'" />
+    <h2>Välkommen till Uno</h2>
+    <p>Ange din e-post så skickar vi en inloggningslänk.</p>
+    <input type="email" id="loginEmail" class="login-input" placeholder="du@exempel.se" />
+    <button class="login-btn" id="loginBtn" onclick="sendMagicLink()">Skicka inloggningslänk</button>
+    <div class="login-msg" id="loginMsg"></div>
+    <div class="login-footer">Inget konto? <a href="/start">Skapa gratis konto</a></div>
   </div>
 </div>
 
@@ -485,6 +559,70 @@
       return _origFetch(url, opts);
     };
   })();
+</script>
+
+<!-- Supabase Auth -->
+<script>
+  const { createClient } = supabase;
+  const _sb = createClient(
+    'https://jplwxsimeeupzqvnjcfx.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwbHd4c2ltZWV1cHpxdm5qY2Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjMxMjksImV4cCI6MjA4NzE5OTEyOX0.9shpHeD0cq2aCokl5VZ8l0D6l_cP9gJ1yKgQs97EqMA'
+  );
+
+  let _chatInitialized = false;
+
+  function showLogin() {
+    document.getElementById('loginOverlay').classList.add('visible');
+  }
+  function hideLogin() {
+    document.getElementById('loginOverlay').classList.remove('visible');
+  }
+  function showUser(email) {
+    document.getElementById('userEmail').textContent = email;
+    document.getElementById('userBadge').classList.add('visible');
+  }
+
+  async function sendMagicLink() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const msg = document.getElementById('loginMsg');
+    const btn = document.getElementById('loginBtn');
+    if (!email) { msg.textContent = 'Ange en e-postadress.'; msg.className = 'login-msg err'; return; }
+    btn.disabled = true; btn.textContent = 'Skickar...';
+    msg.textContent = ''; msg.className = 'login-msg';
+    const { error } = await _sb.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: 'https://uno.powersales.se' }
+    });
+    btn.disabled = false; btn.textContent = 'Skicka inloggningslänk';
+    if (error) { msg.textContent = 'Något gick fel. Försök igen.'; msg.className = 'login-msg err'; }
+    else { msg.textContent = '✅ Kolla din inkorg och klicka på länken!'; }
+  }
+
+  async function signOut() {
+    await _sb.auth.signOut();
+    document.getElementById('userBadge').classList.remove('visible');
+    showLogin();
+  }
+
+  // Enter key i email-fältet
+  document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('loginEmail');
+    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') sendMagicLink(); });
+  });
+
+  // Auth state — körs vid load och vid callback från magic link
+  _sb.auth.onAuthStateChange((event, session) => {
+    if (session && session.user) {
+      hideLogin();
+      showUser(session.user.email);
+      if (!_chatInitialized) {
+        _chatInitialized = true;
+        if (window.initUnoChat) window.initUnoChat();
+      }
+    } else {
+      showLogin();
+    }
+  });
 </script>
 
 <script type="module">
@@ -637,22 +775,32 @@
     const obs = setInterval(() => { if (tryObserveMessages()) clearInterval(obs); }, 300);
   })();
 
-  createChat({
-    webhookUrl: 'https://urbanator25.app.n8n.cloud/webhook/cb38e6b8-379b-4791-b161-7e79e148f0e2/chat',
-    mode: 'fullscreen',
-    target: '#uno-chat-section',
-    chatInputKey: 'chatInput',
-    chatSessionKey: 'sessionId',
-    allowFileUploads: true,
-    initialMessages: ['Hello, Uno here. How can I help you today?'],
-    i18n: {
-      en: {
-        title: 'Uno',
-        subtitle: 'Your Personal Sales Assistant',
-        inputPlaceholder: 'Write a message...',
-        getStarted: 'New chat',
-        closeButtonTooltip: 'Close',
+  window.initUnoChat = function() {
+    createChat({
+      webhookUrl: 'https://urbanator25.app.n8n.cloud/webhook/cb38e6b8-379b-4791-b161-7e79e148f0e2/chat',
+      mode: 'fullscreen',
+      target: '#uno-chat-section',
+      chatInputKey: 'chatInput',
+      chatSessionKey: 'sessionId',
+      allowFileUploads: true,
+      initialMessages: ['Hello, Uno here. How can I help you today?'],
+      i18n: {
+        en: {
+          title: 'Uno',
+          subtitle: 'Your Personal Sales Assistant',
+          inputPlaceholder: 'Write a message...',
+          getStarted: 'New chat',
+          closeButtonTooltip: 'Close',
+        }
       }
+    });
+  };
+
+  // Init direkt om auth redan är klar (t.ex. vid sidorefresh med aktiv session)
+  _sb.auth.getSession().then(({ data: { session } }) => {
+    if (session && !_chatInitialized) {
+      _chatInitialized = true;
+      window.initUnoChat();
     }
   });
 </script>
