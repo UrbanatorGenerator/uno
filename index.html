@@ -616,7 +616,7 @@
       msg.className = 'login-msg err';
     } else {
       _otpEmail = email;
-      document.getElementById('loginStep2Desc').textContent = `En 6-siffrig kod har skickats till ${email}.`;
+      document.getElementById('loginStep2Desc').textContent = `En kod har skickats till ${email}. Klistra in den nedan.`;
       document.getElementById('loginStep1').style.display = 'none';
       document.getElementById('loginStep2').style.display = 'block';
       msg.textContent = ''; msg.className = 'login-msg';
