@@ -606,8 +606,8 @@
     if (!email) { msg.textContent = 'Ange en e-postadress.'; msg.className = 'login-msg err'; return; }
     btn.disabled = true; btn.textContent = 'Skickar...';
     msg.textContent = ''; msg.className = 'login-msg';
-    // shouldCreateUser: false → bara tillåtna användare kan logga in
-    const { error } = await _sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+    // shouldCreateUser: true → skapar kontot automatiskt om det inte finns (OTP = säker gate)
+    const { error } = await _sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
     btn.disabled = false; btn.textContent = 'Skicka kod';
     if (error) {
       msg.textContent = error.message.includes('not found') || error.status === 422
