@@ -446,16 +446,16 @@
 
     <!-- Steg 2: OTP-kod -->
     <div id="loginStep2" style="display:none;">
-      <p id="loginStep2Desc">En 6-siffrig kod har skickats till din e-post.</p>
-      <input type="text" id="loginOtp" class="login-input" placeholder="123456"
-             inputmode="numeric" pattern="[0-9]*" maxlength="6"
+      <p id="loginStep2Desc">En kod har skickats till din e-post.</p>
+      <input type="text" id="loginOtp" class="login-input" placeholder="12345678"
+             inputmode="numeric" pattern="[0-9]*" maxlength="8"
              style="letter-spacing:0.3em; text-align:center; font-size:22px;" />
       <button class="login-btn" id="verifyBtn" onclick="verifyOtp()">Logga in</button>
       <button onclick="resetLogin()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;margin-top:4px;">← Byt e-post</button>
     </div>
 
     <div class="login-msg" id="loginMsg"></div>
-    <div class="login-footer">Inget konto? <a href="/start">Skapa gratis konto</a></div>
+    <div class="login-footer">Vill du ansöka om tillgång? <a href="/start">Beta-program</a></div>
   </div>
 </div>
 
@@ -611,8 +611,8 @@
     btn.disabled = false; btn.textContent = 'Skicka kod';
     if (error) {
       msg.textContent = error.message.includes('not found') || error.status === 422
-        ? 'Ingen användare hittades. Skapa ett konto nedan.'
-        : 'Något gick fel. Försök igen.';
+        ? 'E-postadressen är inte registrerad. Kontakta Powersales för tillgång.'
+        : 'Något gick fel. Försök igen. (' + (error.message || error.status) + ')';
       msg.className = 'login-msg err';
     } else {
       _otpEmail = email;
@@ -628,7 +628,7 @@
     const token = document.getElementById('loginOtp').value.trim();
     const msg = document.getElementById('loginMsg');
     const btn = document.getElementById('verifyBtn');
-    if (token.length !== 6) { msg.textContent = 'Ange den 6-siffriga koden.'; msg.className = 'login-msg err'; return; }
+    if (token.length < 6) { msg.textContent = 'Ange koden från e-posten.'; msg.className = 'login-msg err'; return; }
     btn.disabled = true; btn.textContent = 'Verifierar...';
     msg.textContent = ''; msg.className = 'login-msg';
     const { error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
@@ -656,12 +656,11 @@
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loginEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') sendOtp(); });
     document.getElementById('loginOtp')?.addEventListener('keydown', e => { if (e.key === 'Enter') verifyOtp(); });
-    // Auto-submit när 6 siffror är ifyllda
+    // Auto-submit när 8 siffror är ifyllda (Supabase skickar 8-siffrig OTP)
     document.getElementById('loginOtp')?.addEventListener('input', e => {
-      if (e.target.value.replace(/\D/g,'').length === 6) {
-        e.target.value = e.target.value.replace(/\D/g,'');
-        verifyOtp();
-      }
+      const digits = e.target.value.replace(/\D/g,'');
+      e.target.value = digits;
+      if (digits.length === 8) verifyOtp();
     });
   });
 
