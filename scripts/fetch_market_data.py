@@ -1,5 +1,4 @@
 import yfinance as yf
-import requests
 import json
 
 symbols = {
@@ -27,21 +26,26 @@ for sym, key in symbols.items():
     except Exception as e:
         print(f"Skip {sym}: {e}")
 
-try:
-    r = requests.get('https://open.er-api.com/v6/latest/EUR', timeout=10)
-    R = r.json().get('rates', {})
-    def fx(v, dec): return round(v, dec) if v else None
-    if R.get('USD'): data['eurusd'] = {'price': f"{fx(R['USD'],4)}"}
-    if R.get('GBP') and R.get('USD'): data['gbpusd'] = {'price': f"{fx(R['USD']/R['GBP'],4)}"}
-    if R.get('CHF'): data['eurchf'] = {'price': f"{fx(R['CHF'],4)}"}
-    if R.get('JPY'): data['eurjpy'] = {'price': f"{fx(R['JPY'],2)}"}
-    if R.get('USD') and R.get('CHF'): data['usdchf'] = {'price': f"{fx(R['CHF']/R['USD'],4)}"}
-    if R.get('USD') and R.get('JPY'): data['usdjpy'] = {'price': f"{fx(R['JPY']/R['USD'],2)}"}
-    if R.get('USD') and R.get('SEK'): data['usdsek'] = {'price': f"{fx(R['SEK']/R['USD'],4)}"}
-    if R.get('USD') and R.get('DKK'): data['usddkk'] = {'price': f"{fx(R['DKK']/R['USD'],4)}"}
-    if R.get('USD') and R.get('NOK'): data['usdnok'] = {'price': f"{fx(R['NOK']/R['USD'],4)}"}
-except Exception as e:
-    print(f"FX fetch error: {e}")
+fx_pairs = {
+    'EURUSD=X':  ('eurusd', 4),
+    'GBPUSD=X':  ('gbpusd', 4),
+    'EURCHF=X':  ('eurchf', 4),
+    'EURJPY=X':  ('eurjpy', 2),
+    'USDCHF=X':  ('usdchf', 4),
+    'USDJPY=X':  ('usdjpy', 2),
+    'USDSEK=X':  ('usdsek', 4),
+    'USDDKK=X':  ('usddkk', 4),
+    'USDNOK=X':  ('usdnok', 4),
+}
+
+for sym, (key, dec) in fx_pairs.items():
+    try:
+        fi = yf.Ticker(sym).fast_info
+        price = fi.last_price
+        if price:
+            data[key] = {'price': f"{round(price, dec)}"}
+    except Exception as e:
+        print(f"Skip FX {sym}: {e}")
 
 with open('market-data.json', 'w') as f:
     json.dump(data, f)
