@@ -555,7 +555,7 @@
     window.fetch = function(url, opts) {
       opts = opts || {};
       const method = (opts.method || 'GET').toUpperCase();
-      if (typeof url === 'string' && url.includes('n8n.cloud') && method === 'POST') {
+      if (typeof url === 'string' && (url.includes('n8n.cloud') || url.includes('n8n.powersales.se')) && method === 'POST') {
         // Hide chat starters on first user message
         if (!startersRemoved) {
           startersRemoved = true;
@@ -837,7 +837,7 @@
 
   window.initUnoChat = function() {
     createChat({
-      webhookUrl: 'https://urbanator25.app.n8n.cloud/webhook/cb38e6b8-379b-4791-b161-7e79e148f0e2/chat',
+      webhookUrl: 'https://n8n.powersales.se/webhook/cb38e6b8-379b-4791-b161-7e79e148f0e2/chat',
       mode: 'fullscreen',
       target: '#uno-chat-section',
       chatInputKey: 'chatInput',
