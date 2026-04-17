@@ -171,6 +171,11 @@
       object-fit: cover; flex-shrink: 0;
     }
 
+    /* Scale down h1/h2 headings inside chat message bubbles */
+    .chat-message-text h1 { font-size: 1.15em !important; font-weight: 700 !important; margin: 0.5em 0 0.25em !important; }
+    .chat-message-text h2 { font-size: 1.05em !important; font-weight: 700 !important; margin: 0.5em 0 0.25em !important; }
+    .chat-message-text h3 { font-size: 1em !important; font-weight: 600 !important; margin: 0.4em 0 0.2em !important; }
+
     /* Dynamic height — messages area grows */
     .chat-messages-list { min-height: 300px !important; max-height: none !important; }
     .n8n-chat { height: auto !important; min-height: 460px !important; }
