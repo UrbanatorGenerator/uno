@@ -9,7 +9,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -30,10 +29,8 @@
     header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: #fdf9f3; }
     header h1 .sub { display: inline; font-size: 18px; font-weight: 700; color: #3b82f6; }
     .header-right { display: flex; align-items: center; gap: 16px; }
-    .user-badge { display: none; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.7); }
-    .user-badge.visible { display: flex; }
-    .sign-out-btn { background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); font-size: 11px; padding: 4px 10px; border-radius: 5px; cursor: pointer; }
-    .sign-out-btn:hover { opacity: 1; color: #fff; }
+    .sign-out-btn { background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); font-size: 11px; padding: 4px 10px; border-radius: 5px; cursor: pointer; }
+    .sign-out-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
     .hamburger { background: none; border: none; cursor: pointer; padding: 4px; display: flex; flex-direction: column; gap: 5px; }
     .hamburger span { display: block; width: 22px; height: 2px; background: #fdf9f3; border-radius: 2px; }
 
@@ -48,20 +45,18 @@
     .nav-section { font-size: 10px; font-weight: 700; color: #3b82f6; letter-spacing: 1px; text-transform: uppercase; margin: 16px 0 4px; opacity: 0.8; }
     .nav-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0; }
 
-    /* Login Overlay */
-    #loginOverlay { display: none; position: fixed; inset: 0; background: #1c5070; z-index: 200; align-items: center; justify-content: center; }
-    #loginOverlay.visible { display: flex; }
-    .login-card { background: #1a2744; border-radius: 16px; padding: 40px 32px; max-width: 380px; width: 90%; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-    .login-avatar { width: 72px; height: 72px; border-radius: 50%; margin-bottom: 20px; }
-    .login-card h2 { font-size: 20px; margin-bottom: 8px; color: #fdf9f3; }
-    .login-card p { font-size: 14px; color: rgba(255,255,255,0.65); margin-bottom: 24px; }
-    .login-input { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.07); color: #fdf9f3; font-size: 15px; margin-bottom: 12px; }
-    .login-btn { width: 100%; padding: 12px; border-radius: 8px; background: #3b82f6; color: #fff; font-size: 15px; font-weight: 700; border: none; cursor: pointer; }
-    .login-btn:hover { background: #2563eb; }
-    .login-msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
-    .login-msg.err { color: #f87171; }
-    .login-footer { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 16px; }
-    .login-footer a { color: #3b82f6; }
+    /* Admin gate */
+    #adminGate { display:none; position:fixed; inset:0; background:#1c5070; z-index:300; align-items:center; justify-content:center; }
+    #adminGate.visible { display:flex; }
+    .admin-card { background:#1a2744; border-radius:16px; padding:40px 32px; max-width:360px; width:90%; border:1px solid rgba(255,255,255,0.1); text-align:center; }
+    .admin-card img { width:64px; height:64px; border-radius:50%; margin-bottom:20px; }
+    .admin-card h2 { font-size:20px; margin-bottom:6px; color:#fdf9f3; }
+    .admin-card p { font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:24px; }
+    .admin-input { width:100%; padding:12px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.07); color:#fdf9f3; font-size:15px; margin-bottom:12px; outline:none; }
+    .admin-input:focus { border-color:#3b82f6; }
+    .admin-btn { width:100%; padding:12px; border-radius:8px; background:#3b82f6; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; }
+    .admin-btn:hover { background:#2563eb; }
+    .admin-msg { font-size:13px; color:#f87171; margin-top:8px; min-height:18px; }
 
     /* Main Content */
     main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
@@ -140,10 +135,7 @@
     <h1>Uno <span class="sub">Pipeline</span></h1>
   </div>
   <div class="header-right">
-    <div class="user-badge" id="userBadge">
-      <span id="userEmail"></span>
-      <button class="sign-out-btn" onclick="signOut()">Logga ut</button>
-    </div>
+    <button class="sign-out-btn" onclick="signOut()">Logga ut</button>
     <button class="hamburger" id="menuBtn" aria-label="Menu">
       <span></span><span></span><span></span>
     </button>
@@ -161,26 +153,15 @@
   <div class="nav-section">Information</div>
 </nav>
 
-<!-- Login Overlay -->
-<div id="loginOverlay">
-  <div class="login-card">
-    <img src="Uno_lowres2.png" alt="Uno" class="login-avatar" onerror="this.style.display='none'" />
-    <h2>Välkommen till Uno</h2>
-    <p>Ange din e-post för att logga in.</p>
-    <div id="loginStep1">
-      <input type="email" id="loginEmail" class="login-input" placeholder="du@exempel.se" />
-      <button class="login-btn" id="loginBtn" onclick="sendOtp()">Skicka kod</button>
-    </div>
-    <div id="loginStep2" style="display:none;">
-      <p id="loginStep2Desc">En kod har skickats till din e-post.</p>
-      <input type="text" id="loginOtp" class="login-input" placeholder="12345678"
-             inputmode="numeric" pattern="[0-9]*" maxlength="8"
-             style="letter-spacing:0.3em;text-align:center;font-size:22px;" />
-      <button class="login-btn" id="verifyBtn" onclick="verifyOtp()">Logga in</button>
-      <button onclick="resetLogin()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;margin-top:4px;">← Byt e-post</button>
-    </div>
-    <div class="login-msg" id="loginMsg"></div>
-    <div class="login-footer">Vill du ansöka om tillgång? <a href="/start">Beta-program</a></div>
+<!-- Admin Gate Overlay -->
+<div id="adminGate">
+  <div class="admin-card">
+    <img src="Uno_lowres2.png" alt="Uno" onerror="this.style.display='none'" />
+    <h2>Admin access</h2>
+    <p>Ange adminlösenordet för att fortsätta.</p>
+    <input type="password" id="adminPw" class="admin-input" placeholder="Lösenord" autocomplete="off" />
+    <button class="admin-btn" onclick="checkAdmin()">Logga in</button>
+    <div class="admin-msg" id="adminMsg"></div>
   </div>
 </div>
 
@@ -260,89 +241,48 @@
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMenu(); });
 </script>
 
-<!-- Supabase Auth -->
+<!-- Admin Gate Auth -->
 <script>
-  const { createClient } = supabase;
-  const _sb = createClient(
-    'https://jplwxsimeeupzqvnjcfx.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwbHd4c2ltZWV1cHpxdm5qY2Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjMxMjksImV4cCI6MjA4NzE5OTEyOX0.9shpHeD0cq2aCokl5VZ8l0D6l_cP9gJ1yKgQs97EqMA'
-  );
+  const _ADMIN_HASH = '6e830c483e06732e46a34b30a51d5d392ade03a77b22074e31bfa1241a95d309';
+  const _SK = 'uno_admin_ok';
 
-  let _loaded = false;
-  let _otpEmail = '';
-
-  function showLogin() { document.getElementById('loginOverlay').classList.add('visible'); }
-  function hideLogin() { document.getElementById('loginOverlay').classList.remove('visible'); }
-  function showUser(email) {
-    document.getElementById('userEmail').textContent = email;
-    document.getElementById('userBadge').classList.add('visible');
+  async function _sha256(s) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
   }
 
-  async function sendOtp() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const msg = document.getElementById('loginMsg');
-    const btn = document.getElementById('loginBtn');
-    if (!email) { msg.textContent = 'Ange en e-postadress.'; msg.className = 'login-msg err'; return; }
-    btn.disabled = true; btn.textContent = 'Skickar...';
-    const { error } = await _sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-    btn.disabled = false; btn.textContent = 'Skicka kod';
-    if (error) {
-      msg.textContent = 'Något gick fel. (' + (error.message || error.status) + ')';
-      msg.className = 'login-msg err';
+  async function checkAdmin() {
+    const pw = document.getElementById('adminPw').value;
+    const msg = document.getElementById('adminMsg');
+    if (!pw) return;
+    const h = await _sha256(pw);
+    if (h === _ADMIN_HASH) {
+      sessionStorage.setItem(_SK, '1');
+      document.getElementById('adminGate').classList.remove('visible');
+      document.getElementById('mainContent').style.display = 'block';
+      loadPipeline();
     } else {
-      _otpEmail = email;
-      document.getElementById('loginStep2Desc').textContent = `En kod har skickats till ${email}.`;
-      document.getElementById('loginStep1').style.display = 'none';
-      document.getElementById('loginStep2').style.display = 'block';
-      setTimeout(() => document.getElementById('loginOtp').focus(), 100);
+      msg.textContent = 'Felaktigt lösenord.';
+      document.getElementById('adminPw').value = '';
+      document.getElementById('adminPw').focus();
     }
   }
 
-  async function verifyOtp() {
-    const token = document.getElementById('loginOtp').value.trim();
-    const msg = document.getElementById('loginMsg');
-    const btn = document.getElementById('verifyBtn');
-    if (token.length < 6) { msg.textContent = 'Ange koden från e-posten.'; msg.className = 'login-msg err'; return; }
-    btn.disabled = true; btn.textContent = 'Verifierar...';
-    const { error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
-    btn.disabled = false; btn.textContent = 'Logga in';
-    if (error) { msg.textContent = 'Felaktig eller utgången kod.'; msg.className = 'login-msg err'; }
-  }
-
-  function resetLogin() {
-    _otpEmail = '';
-    document.getElementById('loginOtp').value = '';
-    document.getElementById('loginStep2').style.display = 'none';
-    document.getElementById('loginStep1').style.display = 'block';
-    document.getElementById('loginMsg').textContent = '';
-  }
-
-  async function signOut() {
-    await _sb.auth.signOut();
-    document.getElementById('userBadge').classList.remove('visible');
+  function signOut() {
+    sessionStorage.removeItem(_SK);
     document.getElementById('mainContent').style.display = 'none';
-    showLogin();
+    document.getElementById('adminGate').classList.add('visible');
+    document.getElementById('adminPw').value = '';
+    document.getElementById('adminMsg').textContent = '';
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('loginEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') sendOtp(); });
-    document.getElementById('loginOtp')?.addEventListener('keydown', e => { if (e.key === 'Enter') verifyOtp(); });
-    document.getElementById('loginOtp')?.addEventListener('input', e => {
-      const digits = e.target.value.replace(/\D/g, '');
-      e.target.value = digits;
-      if (digits.length === 8) verifyOtp();
-    });
-  });
-
-  _sb.auth.onAuthStateChange((event, session) => {
-    if (session && session.user) {
-      hideLogin();
-      showUser(session.user.email);
+    document.getElementById('adminPw').addEventListener('keydown', e => { if(e.key==='Enter') checkAdmin(); });
+    if (sessionStorage.getItem(_SK) === '1') {
       document.getElementById('mainContent').style.display = 'block';
-      if (!_loaded) { _loaded = true; loadPipeline(); }
+      loadPipeline();
     } else {
-      showLogin();
-      document.getElementById('mainContent').style.display = 'none';
+      document.getElementById('adminGate').classList.add('visible');
     }
   });
 </script>

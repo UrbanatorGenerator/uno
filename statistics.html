@@ -167,6 +167,19 @@
       .cards { grid-template-columns: repeat(2, 1fr); }
       .charts { grid-template-columns: 1fr; }
     }
+
+    /* Admin gate */
+    #adminGate { display:none; position:fixed; inset:0; background:#1c5070; z-index:300; align-items:center; justify-content:center; }
+    #adminGate.visible { display:flex; }
+    .admin-card { background:#1a2744; border-radius:16px; padding:40px 32px; max-width:360px; width:90%; border:1px solid rgba(255,255,255,0.1); text-align:center; }
+    .admin-card img { width:64px; height:64px; border-radius:50%; margin-bottom:20px; }
+    .admin-card h2 { font-size:20px; margin-bottom:6px; color:#fdf9f3; }
+    .admin-card p { font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:24px; }
+    .admin-input { width:100%; padding:12px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.07); color:#fdf9f3; font-size:15px; margin-bottom:12px; outline:none; }
+    .admin-input:focus { border-color:#3b82f6; }
+    .admin-btn { width:100%; padding:12px; border-radius:8px; background:#3b82f6; color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; }
+    .admin-btn:hover { background:#2563eb; }
+    .admin-msg { font-size:13px; color:#f87171; margin-top:8px; min-height:18px; }
   </style>
 </head>
 <body>
@@ -244,6 +257,18 @@
   </div>
 </div>
 
+<!-- Admin Gate Overlay -->
+<div id="adminGate">
+  <div class="admin-card">
+    <img src="Uno_lowres2.png" alt="Uno" onerror="this.style.display='none'" />
+    <h2>Admin access</h2>
+    <p>Ange adminlösenordet för att fortsätta.</p>
+    <input type="password" id="adminPw" class="admin-input" placeholder="Lösenord" autocomplete="off" />
+    <button class="admin-btn" onclick="checkAdmin()">Logga in</button>
+    <div class="admin-msg" id="adminMsg"></div>
+  </div>
+</div>
+
 <script>
   const menuBtn = document.getElementById('menuBtn');
   const navDrawer = document.getElementById('navDrawer');
@@ -260,7 +285,42 @@
   document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeMenu(); document.getElementById('aboutModal').style.display='none'; document.getElementById('gdprModal').style.display='none'; document.getElementById('dashModal').style.display='none'; }});
 </script>
 
-<main>
+<script>
+  const _ADMIN_HASH = '6e830c483e06732e46a34b30a51d5d392ade03a77b22074e31bfa1241a95d309';
+  const _SK = 'uno_admin_ok';
+
+  async function _sha256(s) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  async function checkAdmin() {
+    const pw = document.getElementById('adminPw').value;
+    const msg = document.getElementById('adminMsg');
+    if (!pw) return;
+    const h = await _sha256(pw);
+    if (h === _ADMIN_HASH) {
+      sessionStorage.setItem(_SK, '1');
+      document.getElementById('adminGate').classList.remove('visible');
+      document.getElementById('mainContent').style.display = 'block';
+    } else {
+      msg.textContent = 'Felaktigt lösenord.';
+      document.getElementById('adminPw').value = '';
+      document.getElementById('adminPw').focus();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('adminPw').addEventListener('keydown', e => { if(e.key==='Enter') checkAdmin(); });
+    if (sessionStorage.getItem(_SK) === '1') {
+      document.getElementById('mainContent').style.display = 'block';
+    } else {
+      document.getElementById('adminGate').classList.add('visible');
+    }
+  });
+</script>
+
+<main id="mainContent" style="display:none;">
   <div class="cards">
     <div class="card">
       <div class="card-label">Conversations Today</div>
