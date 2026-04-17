@@ -302,7 +302,6 @@
     if (h === _ADMIN_HASH) {
       sessionStorage.setItem(_SK, '1');
       document.getElementById('adminGate').classList.remove('visible');
-      document.getElementById('mainContent').style.display = 'block';
     } else {
       msg.textContent = 'Felaktigt lösenord.';
       document.getElementById('adminPw').value = '';
@@ -312,15 +311,13 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('adminPw').addEventListener('keydown', e => { if(e.key==='Enter') checkAdmin(); });
-    if (sessionStorage.getItem(_SK) === '1') {
-      document.getElementById('mainContent').style.display = 'block';
-    } else {
+    if (sessionStorage.getItem(_SK) !== '1') {
       document.getElementById('adminGate').classList.add('visible');
     }
   });
 </script>
 
-<main id="mainContent" style="display:none;">
+<main id="mainContent">
   <div class="cards">
     <div class="card">
       <div class="card-label">Conversations Today</div>

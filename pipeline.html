@@ -260,7 +260,7 @@
       sessionStorage.setItem(_SK, '1');
       document.getElementById('adminGate').classList.remove('visible');
       document.getElementById('mainContent').style.display = 'block';
-      loadPipeline();
+      setTimeout(loadPipeline, 50);
     } else {
       msg.textContent = 'Felaktigt lösenord.';
       document.getElementById('adminPw').value = '';
@@ -280,7 +280,7 @@
     document.getElementById('adminPw').addEventListener('keydown', e => { if(e.key==='Enter') checkAdmin(); });
     if (sessionStorage.getItem(_SK) === '1') {
       document.getElementById('mainContent').style.display = 'block';
-      loadPipeline();
+      setTimeout(loadPipeline, 50);
     } else {
       document.getElementById('adminGate').classList.add('visible');
     }
