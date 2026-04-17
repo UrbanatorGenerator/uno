@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pipeline – Uno Powersales</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1c5070;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      padding: 20px 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .uno-avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid #2a2a2a; }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: #fdf9f3; }
+    header h1 .sub { display: inline; font-size: 18px; font-weight: 700; color: #3b82f6; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .user-badge { display: none; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.7); }
+    .user-badge.visible { display: flex; }
+    .sign-out-btn { background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); font-size: 11px; padding: 4px 10px; border-radius: 5px; cursor: pointer; }
+    .sign-out-btn:hover { opacity: 1; color: #fff; }
+    .hamburger { background: none; border: none; cursor: pointer; padding: 4px; display: flex; flex-direction: column; gap: 5px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: #fdf9f3; border-radius: 2px; }
+
+    /* Nav Drawer */
+    .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; }
+    .nav-drawer { position: fixed; top: 0; right: -280px; width: 260px; height: 100vh; background: #1a2744; border-left: 1px solid rgba(255,255,255,0.1); z-index: 101; transition: right .25s ease; padding: 28px 24px; display: flex; flex-direction: column; gap: 8px; }
+    .nav-drawer.open { right: 0; }
+    .nav-overlay.open { display: block; }
+    .nav-close { align-self: flex-end; background: none; border: none; color: #fdf9f3; font-size: 22px; cursor: pointer; margin-bottom: 16px; opacity: 0.7; }
+    .nav-drawer a, .nav-drawer button.nav-item { display: block; color: #fdf9f3; text-decoration: none; font-size: 15px; font-weight: 600; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.08); background: none; border-top: none; border-left: none; border-right: none; text-align: left; cursor: pointer; width: 100%; opacity: 0.85; }
+    .nav-drawer a:hover, .nav-drawer button.nav-item:hover { opacity: 1; }
+    .nav-section { font-size: 10px; font-weight: 700; color: #3b82f6; letter-spacing: 1px; text-transform: uppercase; margin: 16px 0 4px; opacity: 0.8; }
+    .nav-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0; }
+
+    /* Login Overlay */
+    #loginOverlay { display: none; position: fixed; inset: 0; background: #1c5070; z-index: 200; align-items: center; justify-content: center; }
+    #loginOverlay.visible { display: flex; }
+    .login-card { background: #1a2744; border-radius: 16px; padding: 40px 32px; max-width: 380px; width: 90%; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+    .login-avatar { width: 72px; height: 72px; border-radius: 50%; margin-bottom: 20px; }
+    .login-card h2 { font-size: 20px; margin-bottom: 8px; color: #fdf9f3; }
+    .login-card p { font-size: 14px; color: rgba(255,255,255,0.65); margin-bottom: 24px; }
+    .login-input { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.07); color: #fdf9f3; font-size: 15px; margin-bottom: 12px; }
+    .login-btn { width: 100%; padding: 12px; border-radius: 8px; background: #3b82f6; color: #fff; font-size: 15px; font-weight: 700; border: none; cursor: pointer; }
+    .login-btn:hover { background: #2563eb; }
+    .login-msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
+    .login-msg.err { color: #f87171; }
+    .login-footer { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 16px; }
+    .login-footer a { color: #3b82f6; }
+
+    /* Main Content */
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    /* Summary Cards */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .summary-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; }
+    .summary-card .label { font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .summary-card .value { font-size: 28px; font-weight: 800; color: #fdf9f3; }
+    .summary-card .sub-value { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+    /* Section Header */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-size: 16px; font-weight: 700; color: #fdf9f3; }
+    .refresh-btn { background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+    .refresh-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+
+    /* Stage Breakdown */
+    .stage-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+    .stage-chip { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 14px; font-size: 13px; }
+    .stage-chip .sn { font-weight: 700; color: #fdf9f3; }
+    .stage-chip .sc { color: rgba(255,255,255,0.55); font-size: 12px; margin-top: 2px; }
+
+    /* Pipeline Table */
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    thead th { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; padding: 12px 16px; text-align: left; white-space: nowrap; }
+    tbody tr { border-top: 1px solid rgba(255,255,255,0.06); transition: background .15s; }
+    tbody tr:hover { background: rgba(255,255,255,0.04); }
+    tbody td { padding: 14px 16px; font-size: 14px; color: #e0e0e0; vertical-align: middle; }
+    tbody td .deal-id { font-size: 11px; color: rgba(255,255,255,0.35); font-family: monospace; }
+    tbody td .company { font-weight: 600; color: #fdf9f3; }
+    tbody td .opportunity { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+
+    /* Stage badges */
+    .stage-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .stage-1 { background: rgba(148,163,184,0.2); color: #94a3b8; }
+    .stage-2 { background: rgba(99,102,241,0.2); color: #818cf8; }
+    .stage-3 { background: rgba(59,130,246,0.2); color: #60a5fa; }
+    .stage-4 { background: rgba(234,179,8,0.2); color: #facc15; }
+    .stage-5 { background: rgba(249,115,22,0.2); color: #fb923c; }
+    .stage-6 { background: rgba(34,197,94,0.25); color: #4ade80; }
+    .stage-7 { background: rgba(16,185,129,0.3); color: #34d399; }
+    .stage-8 { background: rgba(239,68,68,0.2); color: #f87171; }
+
+    .weighted-val { font-weight: 700; color: #4ade80; }
+    .closing-month { font-size: 12px; color: rgba(255,255,255,0.5); }
+    .deal-size { font-weight: 600; }
+
+    /* Footer total row */
+    tfoot td { padding: 14px 16px; font-size: 13px; font-weight: 700; background: rgba(255,255,255,0.04); border-top: 2px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+    tfoot .total-label { color: #3b82f6; }
+    tfoot .total-val { color: #4ade80; font-size: 15px; }
+
+    /* Loading / empty */
+    .loading-msg, .empty-msg { text-align: center; padding: 48px; color: rgba(255,255,255,0.4); font-size: 15px; }
+    .loading-spinner { display: inline-block; width: 22px; height: 22px; border: 2px solid rgba(255,255,255,0.15); border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 10px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .updated-at { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 12px; text-align: right; }
+
+    footer { text-align: center; padding: 32px 0 16px; font-size: 12px; color: rgba(255,255,255,0.25); }
+
+    @media (max-width: 600px) {
+      header { padding: 14px 16px; }
+      main { padding: 20px 12px; }
+      .summary-card .value { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <img src="Uno_lowres2.png" alt="Uno" class="uno-avatar" onerror="this.style.display='none'" />
+    <h1>Uno <span class="sub">Pipeline</span></h1>
+  </div>
+  <div class="header-right">
+    <div class="user-badge" id="userBadge">
+      <span id="userEmail"></span>
+      <button class="sign-out-btn" onclick="signOut()">Logga ut</button>
+    </div>
+    <button class="hamburger" id="menuBtn" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="nav-overlay" id="navOverlay"></div>
+<nav class="nav-drawer" id="navDrawer">
+  <button class="nav-close" id="navClose">✕</button>
+  <div class="nav-section">Navigation</div>
+  <a href="index.html">💬 Chat</a>
+  <a href="statistics.html">📊 Statistics</a>
+  <a href="pipeline.html">📈 Pipeline</a>
+  <hr class="nav-divider">
+  <div class="nav-section">Information</div>
+</nav>
+
+<!-- Login Overlay -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <img src="Uno_lowres2.png" alt="Uno" class="login-avatar" onerror="this.style.display='none'" />
+    <h2>Välkommen till Uno</h2>
+    <p>Ange din e-post för att logga in.</p>
+    <div id="loginStep1">
+      <input type="email" id="loginEmail" class="login-input" placeholder="du@exempel.se" />
+      <button class="login-btn" id="loginBtn" onclick="sendOtp()">Skicka kod</button>
+    </div>
+    <div id="loginStep2" style="display:none;">
+      <p id="loginStep2Desc">En kod har skickats till din e-post.</p>
+      <input type="text" id="loginOtp" class="login-input" placeholder="12345678"
+             inputmode="numeric" pattern="[0-9]*" maxlength="8"
+             style="letter-spacing:0.3em;text-align:center;font-size:22px;" />
+      <button class="login-btn" id="verifyBtn" onclick="verifyOtp()">Logga in</button>
+      <button onclick="resetLogin()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;margin-top:4px;">← Byt e-post</button>
+    </div>
+    <div class="login-msg" id="loginMsg"></div>
+    <div class="login-footer">Vill du ansöka om tillgång? <a href="/start">Beta-program</a></div>
+  </div>
+</div>
+
+<main id="mainContent" style="display:none;">
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Aktiva deals</div>
+      <div class="value" id="sumActive">—</div>
+      <div class="sub-value" id="sumTotalSize">—</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Weighted Forecast</div>
+      <div class="value" id="sumWeighted">—</div>
+      <div class="sub-value">sannolikhetsjusterat</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Pipeline-värde</div>
+      <div class="value" id="sumPipeline">—</div>
+      <div class="sub-value">totalt deal-värde</div>
+    </div>
+  </div>
+
+  <!-- Stage breakdown -->
+  <div class="section-header">
+    <div class="section-title">Per stage</div>
+    <button class="refresh-btn" onclick="loadPipeline()">↻ Uppdatera</button>
+  </div>
+  <div class="stage-grid" id="stageGrid">
+    <div class="loading-msg"><span class="loading-spinner"></span> Laddar...</div>
+  </div>
+
+  <!-- Deals table -->
+  <div class="section-header" style="margin-top:8px;">
+    <div class="section-title">Aktiva deals</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Bolag</th>
+          <th>Stage</th>
+          <th>Deal Size</th>
+          <th>Weighted</th>
+          <th>Closing</th>
+          <th>Kontakt</th>
+        </tr>
+      </thead>
+      <tbody id="dealsTbody">
+        <tr><td colspan="6" class="loading-msg"><span class="loading-spinner"></span> Laddar pipeline...</td></tr>
+      </tbody>
+      <tfoot id="dealsTfoot" style="display:none;">
+        <tr>
+          <td colspan="3" class="total-label">Weighted forecast (aktiva deals)</td>
+          <td class="total-val" id="footerWeighted">—</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="updated-at" id="updatedAt"></div>
+
+  <footer>Powered by Powersales — 2026</footer>
+</main>
+
+<!-- Nav Script -->
+<script>
+  const menuBtn = document.getElementById('menuBtn');
+  const navDrawer = document.getElementById('navDrawer');
+  const navOverlay = document.getElementById('navOverlay');
+  const navClose = document.getElementById('navClose');
+  function openMenu() { navDrawer.classList.add('open'); navOverlay.classList.add('open'); }
+  function closeMenu() { navDrawer.classList.remove('open'); navOverlay.classList.remove('open'); }
+  menuBtn.addEventListener('click', openMenu);
+  navClose.addEventListener('click', closeMenu);
+  navOverlay.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMenu(); });
+</script>
+
+<!-- Supabase Auth -->
+<script>
+  const { createClient } = supabase;
+  const _sb = createClient(
+    'https://jplwxsimeeupzqvnjcfx.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwbHd4c2ltZWV1cHpxdm5qY2Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjMxMjksImV4cCI6MjA4NzE5OTEyOX0.9shpHeD0cq2aCokl5VZ8l0D6l_cP9gJ1yKgQs97EqMA'
+  );
+
+  let _loaded = false;
+  let _otpEmail = '';
+
+  function showLogin() { document.getElementById('loginOverlay').classList.add('visible'); }
+  function hideLogin() { document.getElementById('loginOverlay').classList.remove('visible'); }
+  function showUser(email) {
+    document.getElementById('userEmail').textContent = email;
+    document.getElementById('userBadge').classList.add('visible');
+  }
+
+  async function sendOtp() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const msg = document.getElementById('loginMsg');
+    const btn = document.getElementById('loginBtn');
+    if (!email) { msg.textContent = 'Ange en e-postadress.'; msg.className = 'login-msg err'; return; }
+    btn.disabled = true; btn.textContent = 'Skickar...';
+    const { error } = await _sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+    btn.disabled = false; btn.textContent = 'Skicka kod';
+    if (error) {
+      msg.textContent = 'Något gick fel. (' + (error.message || error.status) + ')';
+      msg.className = 'login-msg err';
+    } else {
+      _otpEmail = email;
+      document.getElementById('loginStep2Desc').textContent = `En kod har skickats till ${email}.`;
+      document.getElementById('loginStep1').style.display = 'none';
+      document.getElementById('loginStep2').style.display = 'block';
+      setTimeout(() => document.getElementById('loginOtp').focus(), 100);
+    }
+  }
+
+  async function verifyOtp() {
+    const token = document.getElementById('loginOtp').value.trim();
+    const msg = document.getElementById('loginMsg');
+    const btn = document.getElementById('verifyBtn');
+    if (token.length < 6) { msg.textContent = 'Ange koden från e-posten.'; msg.className = 'login-msg err'; return; }
+    btn.disabled = true; btn.textContent = 'Verifierar...';
+    const { error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
+    btn.disabled = false; btn.textContent = 'Logga in';
+    if (error) { msg.textContent = 'Felaktig eller utgången kod.'; msg.className = 'login-msg err'; }
+  }
+
+  function resetLogin() {
+    _otpEmail = '';
+    document.getElementById('loginOtp').value = '';
+    document.getElementById('loginStep2').style.display = 'none';
+    document.getElementById('loginStep1').style.display = 'block';
+    document.getElementById('loginMsg').textContent = '';
+  }
+
+  async function signOut() {
+    await _sb.auth.signOut();
+    document.getElementById('userBadge').classList.remove('visible');
+    document.getElementById('mainContent').style.display = 'none';
+    showLogin();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('loginEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') sendOtp(); });
+    document.getElementById('loginOtp')?.addEventListener('keydown', e => { if (e.key === 'Enter') verifyOtp(); });
+    document.getElementById('loginOtp')?.addEventListener('input', e => {
+      const digits = e.target.value.replace(/\D/g, '');
+      e.target.value = digits;
+      if (digits.length === 8) verifyOtp();
+    });
+  });
+
+  _sb.auth.onAuthStateChange((event, session) => {
+    if (session && session.user) {
+      hideLogin();
+      showUser(session.user.email);
+      document.getElementById('mainContent').style.display = 'block';
+      if (!_loaded) { _loaded = true; loadPipeline(); }
+    } else {
+      showLogin();
+      document.getElementById('mainContent').style.display = 'none';
+    }
+  });
+</script>
+
+<!-- Pipeline Data -->
+<script>
+  const STAGE_COLORS = { '1':'stage-1','2':'stage-2','3':'stage-3','4':'stage-4','5':'stage-5','6':'stage-6','7':'stage-7','8':'stage-8' };
+
+  function fmt(n) {
+    return new Intl.NumberFormat('sv-SE').format(n) + ' kr';
+  }
+
+  async function loadPipeline() {
+    document.getElementById('dealsTbody').innerHTML = '<tr><td colspan="6" class="loading-msg"><span class="loading-spinner"></span> Hämtar pipeline...</td></tr>';
+    document.getElementById('stageGrid').innerHTML = '<div class="loading-msg"><span class="loading-spinner"></span></div>';
+    document.getElementById('dealsTfoot').style.display = 'none';
+
+    try {
+      const res = await fetch('https://n8n.powersales.se/webhook/pipeline-data');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      renderSummary(data.summary);
+      renderStages(data.summary.stage_breakdown);
+      renderDeals(data.deals.filter(d => d.is_active), data.summary.weighted_total);
+
+      const ts = new Date(data.summary.updated_at);
+      document.getElementById('updatedAt').textContent = 'Uppdaterad: ' + ts.toLocaleTimeString('sv-SE', { hour:'2-digit', minute:'2-digit' });
+    } catch (e) {
+      document.getElementById('dealsTbody').innerHTML = '<tr><td colspan="6" class="empty-msg">⚠️ Kunde inte hämta pipeline. Försök igen.</td></tr>';
+      document.getElementById('stageGrid').innerHTML = '';
+      console.error(e);
+    }
+  }
+
+  function renderSummary(s) {
+    document.getElementById('sumActive').textContent = s.active_count;
+    document.getElementById('sumTotalSize').textContent = fmt(s.total_deal_size) + ' totalt';
+    document.getElementById('sumWeighted').textContent = fmt(s.weighted_total);
+    document.getElementById('sumPipeline').textContent = fmt(s.total_deal_size);
+  }
+
+  function renderStages(breakdown) {
+    const grid = document.getElementById('stageGrid');
+    if (!breakdown || !breakdown.length) {
+      grid.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:14px;">Inga aktiva deals</div>';
+      return;
+    }
+    grid.innerHTML = breakdown.map(s => `
+      <div class="stage-chip">
+        <div class="sn">${s.stage_label}</div>
+        <div class="sc">${s.count} deal${s.count > 1 ? 's' : ''} · ${fmt(s.weighted)}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderDeals(deals, weightedTotal) {
+    const tbody = document.getElementById('dealsTbody');
+    const tfoot = document.getElementById('dealsTfoot');
+
+    if (!deals.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Inga aktiva deals i pipeline.</td></tr>';
+      return;
+    }
+
+    // Sort by stage number descending (closest to close first)
+    deals.sort((a, b) => parseInt(b.stage_num) - parseInt(a.stage_num));
+
+    tbody.innerHTML = deals.map(d => `
+      <tr>
+        <td>
+          <div class="company">${esc(d.foretag)}</div>
+          <div class="opportunity">${esc(d.affarsmojlighet)}</div>
+          <div class="deal-id">${esc(d.deal_id)}</div>
+        </td>
+        <td><span class="stage-badge ${STAGE_COLORS[d.stage_num] || 'stage-1'}">${esc(d.stage_label)}</span></td>
+        <td class="deal-size">${d.deal_size ? fmt(d.deal_size) : '—'}</td>
+        <td class="weighted-val">${d.weighted_value ? fmt(d.weighted_value) : '—'}<br><span style="font-size:11px;color:rgba(255,255,255,0.35);font-weight:400">${d.prob_pct}%</span></td>
+        <td class="closing-month">${esc(d.closing_month) || '—'}</td>
+        <td style="font-size:13px;color:rgba(255,255,255,0.6)">${esc(d.kontaktperson) || '—'}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('footerWeighted').textContent = fmt(weightedTotal);
+    tfoot.style.display = '';
+  }
+
+  function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+
+</body>
+</html>
