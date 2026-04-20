@@ -36,6 +36,7 @@ fx_pairs = {
     'USDSEK=X':  ('usdsek', 4),
     'USDDKK=X':  ('usddkk', 4),
     'USDNOK=X':  ('usdnok', 4),
+    'SEKCOP=X':  ('sekcop', 0),
 }
 
 for sym, (key, dec) in fx_pairs.items():
