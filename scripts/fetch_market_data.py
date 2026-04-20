@@ -36,17 +36,27 @@ fx_pairs = {
     'USDSEK=X':  ('usdsek', 4),
     'USDDKK=X':  ('usddkk', 4),
     'USDNOK=X':  ('usdnok', 4),
-    'SEKCOP=X':  ('sekcop', 0),
+    'USDCOP=X':  ('usdcop', 2),
 }
+
+raw_fx = {}
 
 for sym, (key, dec) in fx_pairs.items():
     try:
         fi = yf.Ticker(sym).fast_info
         price = fi.last_price
         if price:
+            raw_fx[key] = price
             data[key] = {'price': f"{round(price, dec)}"}
     except Exception as e:
         print(f"Skip FX {sym}: {e}")
+
+# SEK/COP cross rate: USDCOP / USDSEK
+try:
+    sekcop = raw_fx['usdcop'] / raw_fx['usdsek']
+    data['sekcop'] = {'price': f"{round(sekcop, 0):.0f}"}
+except Exception as e:
+    print(f"Skip SEK/COP cross: {e}")
 
 with open('market-data.json', 'w') as f:
     json.dump(data, f)
