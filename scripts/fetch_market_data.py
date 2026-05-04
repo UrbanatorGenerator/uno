@@ -26,6 +26,24 @@ for sym, key in symbols.items():
     except Exception as e:
         print(f"Skip {sym}: {e}")
 
+crypto_pairs = {
+    'BCH-USD': ('bchusd', 2),
+}
+
+for sym, (key, dec) in crypto_pairs.items():
+    try:
+        fi = yf.Ticker(sym).fast_info
+        price = fi.last_price
+        prev  = fi.previous_close
+        if price and prev:
+            chg = (price - prev) / prev * 100
+            data[key] = {
+                'price': f'{price:,.2f}',
+                'change': round(chg, 2)
+            }
+    except Exception as e:
+        print(f"Skip crypto {sym}: {e}")
+
 fx_pairs = {
     'EURUSD=X':  ('eurusd', 4),
     'GBPUSD=X':  ('gbpusd', 4),

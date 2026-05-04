@@ -525,6 +525,8 @@
     <span class="ticker-item">USD/NOK <span class="tv" id="t-usdnok">—</span></span>
     <span class="ticker-sep">·</span>
     <span class="ticker-item">SEK/COP <span class="tv" id="t-sekcop">—</span></span>
+    <span class="ticker-sep">·</span>
+    <span class="ticker-item">BCH/USD <span class="tv" id="t-bchusd">—</span></span>
   </div>
 </div>
 
@@ -887,7 +889,7 @@
     try {
       const r = await fetch('market-data.json?t=' + Date.now());
       const d = await r.json();
-      const keys = ['spx','ftse','dax','omxspi','omxs30','nikkei','eurusd','gbpusd','eurchf','eurjpy','usdchf','usdjpy','usdsek','usddkk','usdnok','sekcop'];
+      const keys = ['spx','ftse','dax','omxspi','omxs30','nikkei','eurusd','gbpusd','eurchf','eurjpy','usdchf','usdjpy','usdsek','usddkk','usdnok','sekcop','bchusd'];
       keys.forEach(k => { if (d[k]) setTicker('t-'+k, d[k].price, d[k].change ?? null); });
     } catch(e) { console.error('Ticker error:', e); }
   }
