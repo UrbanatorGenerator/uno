@@ -881,7 +881,7 @@
     if (!el) return;
     if (change === undefined || change === null) { el.textContent = price; el.className = 'tv'; return; }
     const sign = change >= 0 ? '+' : '';
-    el.textContent = sign + change.toFixed(2) + '%';
+    el.textContent = price + ' (' + sign + change.toFixed(2) + '%)';
     el.className = 'tv ' + (change >= 0 ? 'up' : 'down');
   }
 
