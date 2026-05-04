@@ -20,7 +20,7 @@ for sym, key in symbols.items():
         if price and prev:
             chg = (price - prev) / prev * 100
             data[key] = {
-                'price': f'{price:,.2f}',
+                'price': f'{price:,.0f}',
                 'change': round(chg, 2)
             }
     except Exception as e:
