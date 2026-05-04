@@ -876,12 +876,12 @@
 
 <script>
 (function() {
-  function setTicker(id, price, change) {
+  function setTicker(id, price, change, showPrice = false) {
     const el = document.getElementById(id);
     if (!el) return;
     if (change === undefined || change === null) { el.textContent = price; el.className = 'tv'; return; }
     const sign = change >= 0 ? '+' : '';
-    el.textContent = price + ' (' + sign + change.toFixed(2) + '%)';
+    el.textContent = showPrice ? price + ' (' + sign + change.toFixed(2) + '%)' : sign + change.toFixed(2) + '%';
     el.className = 'tv ' + (change >= 0 ? 'up' : 'down');
   }
 
@@ -889,8 +889,12 @@
     try {
       const r = await fetch('market-data.json?t=' + Date.now());
       const d = await r.json();
-      const keys = ['spx','ftse','dax','omxspi','omxs30','nikkei','eurusd','gbpusd','eurchf','eurjpy','usdchf','usdjpy','usdsek','usddkk','usdnok','sekcop','bchusd'];
-      keys.forEach(k => { if (d[k]) setTicker('t-'+k, d[k].price, d[k].change ?? null); });
+      const stockKeys  = ['spx','ftse','dax','omxspi','omxs30','nikkei'];
+      const cryptoKeys = ['bchusd'];
+      const fxKeys     = ['eurusd','gbpusd','eurchf','eurjpy','usdchf','usdjpy','usdsek','usddkk','usdnok','sekcop'];
+      stockKeys.forEach(k  => { if (d[k]) setTicker('t-'+k, d[k].price, d[k].change ?? null, false); });
+      cryptoKeys.forEach(k => { if (d[k]) setTicker('t-'+k, d[k].price, d[k].change ?? null, true); });
+      fxKeys.forEach(k     => { if (d[k]) setTicker('t-'+k, d[k].price, null); });
     } catch(e) { console.error('Ticker error:', e); }
   }
   document.addEventListener('DOMContentLoaded', loadTicker);
