@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uno – Anslut ditt Google-konto</title>
+  <link rel="icon" type="image/png" href="../favicon.png" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:        #1c5070;
+      --bg-card:   #1a4a66;
+      --bg-card2:  #153d56;
+      --border:    rgba(255,255,255,0.08);
+      --text:      #e8f4f8;
+      --muted:     rgba(232,244,248,0.6);
+      --green:     #10b981;
+      --blue:      #3b82f6;
+      --blue-h:    #2563eb;
+      --google:    #ffffff;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 32px;
+      color: var(--text);
+    }
+    .logo span { color: var(--green); }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .step-badge {
+      display: inline-block;
+      background: rgba(59,130,246,0.15);
+      color: var(--blue);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+
+    .name-highlight {
+      color: var(--green);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+
+    .scopes {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+    .scopes h3 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .scope-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .scope-item:last-child { margin-bottom: 0; }
+    .scope-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .scope-text { color: var(--muted); line-height: 1.4; }
+    .scope-text strong { color: var(--text); }
+
+    .btn-google {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 16px 24px;
+      background: var(--google);
+      color: #1a1a1a;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-bottom: 16px;
+    }
+    .btn-google:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-google:active { transform: translateY(0); }
+
+    .google-logo {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .privacy-note {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .privacy-note a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 32px 0;
+    }
+
+    .steps {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 0;
+    }
+    .step-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+    .step-dot.active { background: var(--green); }
+    .step-dot.done   { background: rgba(16,185,129,0.4); }
+
+    /* Error/loading states */
+    .state-loading, .state-error, .state-invalid {
+      display: none;
+    }
+    .state-loading .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      margin-top: 32px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">Uno <span>·</span> Powersales</div>
+
+  <!-- MAIN CARD -->
+  <div class="card" id="card-main">
+    <div class="step-badge">Steg 1 av 1</div>
+
+    <h1>Hej <span class="name-highlight" id="customer-name">...</span>!</h1>
+    <p class="subtitle">
+      Anslut ditt Google-konto så att Uno kan läsa din kalender och hantera din e-post.<br>
+      Det tar under en minut.
+    </p>
+
+    <div class="scopes">
+      <h3>Uno kommer att kunna</h3>
+      <div class="scope-item">
+        <span class="scope-icon">📅</span>
+        <span class="scope-text"><strong>Läsa din kalender</strong> — för dagliga briefs och mötesförberedelser</span>
+      </div>
+      <div class="scope-item">
+        <span class="scope-icon">✉️</span>
+        <span class="scope-text"><strong>Läsa och skicka e-post</strong> — för att hantera din inkorg och skicka uppföljningar</span>
+      </div>
+      <div class="scope-item">
+        <span class="scope-icon">📊</span>
+        <span class="scope-text"><strong>Läsa Google Sheets &amp; Docs</strong> — för din todo-lista och anteckningar</span>
+      </div>
+    </div>
+
+    <a id="btn-connect" href="#" class="btn-google">
+      <!-- Google G logo SVG -->
+      <svg class="google-logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Anslut med Google
+    </a>
+
+    <p class="privacy-note">
+      Din data stannar hos dig. Vi lagrar aldrig e-postinnehåll permanent.<br>
+      Frågor? <a href="mailto:urban.gavelin@powersales.se">urban.gavelin@powersales.se</a>
+    </p>
+
+    <div class="divider"></div>
+    <div class="steps">
+      <div class="step-dot done"></div>
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+    </div>
+  </div>
+
+  <!-- FELKORT: ogiltig token -->
+  <div class="card state-invalid" id="card-invalid">
+    <div style="font-size:48px;margin-bottom:24px">⚠️</div>
+    <h1>Ogiltig länk</h1>
+    <p class="subtitle" style="margin-bottom:0">
+      Länken verkar vara felaktig eller utgången.<br>
+      Kontakta <a href="mailto:urban.gavelin@powersales.se" style="color:#3b82f6">urban.gavelin@powersales.se</a> så ordnar vi en ny.
+    </p>
+  </div>
+
+  <footer>Powersales Communication © 2026</footer>
+
+<script>
+  // ── Konfiguration ────────────────────────────────────────────
+  const GOOGLE_CLIENT_ID  = '221707983257-pj3v975va8lhqbq2du50b89a1lirb37n.apps.googleusercontent.com';
+  const REDIRECT_URI      = 'https://n8n.powersales.se/webhook/google-oauth-callback';
+  const SUPABASE_URL      = 'https://jplwxsimeeupzqvnjcfx.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwbHd4c2ltZWV1cHpxdm5qY2Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjMxMjksImV4cCI6MjA4NzE5OTEyOX0.9shpHeD0cq2aCokl5VZ8l0D6l_cP9gJ1yKgQs97EqMA';
+
+  const SCOPES = [
+    'https://www.googleapis.com/auth/gmail.modify',
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/documents'
+  ].join(' ');
+
+  // ── Hämta token från URL ─────────────────────────────────────
+  const params         = new URLSearchParams(window.location.search);
+  const onboardToken   = params.get('token');
+
+  async function init() {
+    if (!onboardToken) {
+      showInvalid();
+      return;
+    }
+
+    // Hämta kundnamn från Supabase via onboarding_token
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/onboarding_tokens?token=eq.${onboardToken}&select=name,used,expires_at&limit=1`,
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+      );
+      const rows = await res.json();
+      const row  = rows[0];
+
+      if (!row || row.used || new Date(row.expires_at) < new Date()) {
+        showInvalid();
+        return;
+      }
+
+      // Visa kundens namn
+      document.getElementById('customer-name').textContent = row.name.split(' ')[0];
+
+    } catch (e) {
+      // Om Supabase-anropet misslyckas, visa ändå knappen (mer tolerant för beta)
+      document.getElementById('customer-name').textContent = '';
+    }
+
+    // Bygg Google OAuth URL
+    const oauthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    oauthUrl.searchParams.set('client_id',     GOOGLE_CLIENT_ID);
+    oauthUrl.searchParams.set('redirect_uri',  REDIRECT_URI);
+    oauthUrl.searchParams.set('response_type', 'code');
+    oauthUrl.searchParams.set('scope',         SCOPES);
+    oauthUrl.searchParams.set('access_type',   'offline');
+    oauthUrl.searchParams.set('prompt',        'consent');
+    oauthUrl.searchParams.set('state',         onboardToken);
+
+    document.getElementById('btn-connect').href = oauthUrl.toString();
+  }
+
+  function showInvalid() {
+    document.getElementById('card-main').style.display    = 'none';
+    document.getElementById('card-invalid').style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>
