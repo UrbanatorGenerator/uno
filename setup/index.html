@@ -284,8 +284,16 @@
     // Hämta kundnamn från Supabase via onboarding_token
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/onboarding_tokens?token=eq.${onboardToken}&select=name,used,expires_at&limit=1`,
-        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+        `${SUPABASE_URL}/rest/v1/rpc/validate_onboarding_token`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ p_token: onboardToken })
+        }
       );
       const rows = await res.json();
       const row  = rows[0];
