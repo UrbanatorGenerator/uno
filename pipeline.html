@@ -285,6 +285,7 @@
     const h = await _sha256(pw);
     if (h === _ADMIN_HASH) {
       sessionStorage.setItem(_SK, '1');
+      sessionStorage.setItem('uno_admin_key', pw);
       document.getElementById('adminGate').classList.remove('visible');
       document.getElementById('mainContent').style.display = 'block';
       setTimeout(loadPipeline, 50);
@@ -297,6 +298,7 @@
 
   function signOut() {
     sessionStorage.removeItem(_SK);
+    sessionStorage.removeItem('uno_admin_key');
     document.getElementById('mainContent').style.display = 'none';
     document.getElementById('adminGate').classList.add('visible');
     document.getElementById('adminPw').value = '';
@@ -328,7 +330,10 @@
     document.getElementById('dealsTfoot').style.display = 'none';
 
     try {
-      const res = await fetch('https://n8n.powersales.se/webhook/pipeline-data');
+      const res = await fetch('https://n8n.powersales.se/webhook/pipeline-data', {
+        headers: { 'x-uno-key': sessionStorage.getItem('uno_admin_key') || '' }
+      });
+      if (res.status === 403) { signOut(); throw new Error('Sessionen har gått ut – logga in igen.'); }
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
 
