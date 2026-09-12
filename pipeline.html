@@ -62,6 +62,9 @@
     main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
 
     /* Summary Cards */
+    .year-filter { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:16px; font-size:13px; color:rgba(255,255,255,0.6); }
+    .year-filter button { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.75); padding:6px 12px; border-radius:999px; cursor:pointer; font-size:13px; }
+    .year-filter button.on { background:#34d399; border-color:#34d399; color:#0b1220; font-weight:700; }
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
     .summary-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; }
     .summary-card .label { font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
@@ -166,6 +169,7 @@
 </div>
 
 <main id="mainContent" style="display:none;">
+  <div class="year-filter" id="yearFilter"></div>
   <!-- Summary Cards -->
   <div class="summary-grid">
     <div class="summary-card">
@@ -336,11 +340,9 @@
       if (res.status === 403) { signOut(); throw new Error('Sessionen har gått ut – logga in igen.'); }
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-
-      renderSummary(data.summary);
-      renderStages(data.summary.stage_breakdown);
-      renderDeals(data.deals.filter(d => d.is_active), data.summary.weighted_total);
-      renderWonDeals(data.deals.filter(d => d.is_won));
+      _pipeData = data;
+      renderYearFilter(data);
+      renderFiltered();
 
       const ts = new Date(data.summary.updated_at);
       document.getElementById('updatedAt').textContent = 'Uppdaterad: ' + ts.toLocaleTimeString('sv-SE', { hour:'2-digit', minute:'2-digit' });
@@ -349,6 +351,35 @@
       document.getElementById('stageGrid').innerHTML = '';
       console.error(e);
     }
+  }
+
+  // Årsfilter: "alla" eller ett år ur affärernas stängningsmånad (YYYY-MM). Affärer utan datum visas alltid.
+  let _pipeData = null;
+  let _year = localStorage.getItem('uno_pipeline_year') || 'alla';
+  function yearOf(d) { const m = String(d.closing_month || '').match(/^(\d{4})/); return m ? m[1] : null; }
+  function renderYearFilter(data) {
+    const years = new Set([String(new Date().getFullYear()), String(new Date().getFullYear() + 1)]);
+    data.deals.forEach(d => { const y = yearOf(d); if (y) years.add(y); });
+    const opts = ['alla', ...[...years].sort()];
+    if (!opts.includes(_year)) _year = 'alla';
+    document.getElementById('yearFilter').innerHTML = '<span>År:</span>' + opts.map(y => `<button class="${y === _year ? 'on' : ''}" onclick="setYear('${y}')">${y === 'alla' ? 'Alla år' : y}</button>`).join('');
+  }
+  function setYear(y) { _year = y; localStorage.setItem('uno_pipeline_year', y); renderYearFilter(_pipeData); renderFiltered(); }
+  function renderFiltered() {
+    const inYear = d => _year === 'alla' || !yearOf(d) || yearOf(d) === _year;
+    const active = _pipeData.deals.filter(d => d.is_active && inYear(d));
+    const won = _pipeData.deals.filter(d => d.is_won && inYear(d));
+    const stageMap = {};
+    for (const d of active) {
+      if (!stageMap[d.stage_num]) stageMap[d.stage_num] = { stage_num: d.stage_num, stage_label: d.stage_label, count: 0, weighted: 0 };
+      stageMap[d.stage_num].count++; stageMap[d.stage_num].weighted += d.weighted_value || 0;
+    }
+    const weighted = active.reduce((s, d) => s + (d.weighted_value || 0), 0);
+    renderSummary({ active_count: active.length, total_deal_size: active.reduce((s, d) => s + (d.deal_size || 0), 0), weighted_total: weighted,
+      won_count: won.length, won_total: won.reduce((s, d) => s + (d.deal_size || 0), 0) });
+    renderStages(Object.values(stageMap).sort((a, b) => parseInt(a.stage_num) - parseInt(b.stage_num)));
+    renderDeals(active, weighted);
+    renderWonDeals(won);
   }
 
   function renderSummary(s) {
