@@ -62,6 +62,18 @@
     main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
 
     /* Summary Cards */
+    .budget-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:18px 20px; margin-bottom:24px; }
+    .budget-card .bh { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .budget-card .bt { font-size:16px; font-weight:700; color:#fdf9f3; }
+    .budget-card .bs { font-size:13px; color:rgba(255,255,255,0.5); }
+    .budget-bar { position:relative; display:flex; height:26px; background:rgba(255,255,255,0.07); border-radius:6px; overflow:hidden; }
+    .budget-bar .seg-won { background:#34d399; }
+    .budget-bar .seg-fc { background:rgba(52,211,153,0.3); }
+    .budget-bar .pace { position:absolute; top:-4px; bottom:-4px; width:2px; background:#fbbf24; }
+    .budget-legend { display:flex; gap:18px; flex-wrap:wrap; margin-top:12px; font-size:13px; color:rgba(255,255,255,0.6); align-items:center; }
+    .budget-legend i { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:middle; }
+    .budget-legend .ok { color:#34d399; font-weight:700; }
+    .budget-legend .miss { color:#fbbf24; font-weight:700; }
     .year-filter { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:16px; font-size:13px; color:rgba(255,255,255,0.6); }
     .year-filter button { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.75); padding:6px 12px; border-radius:999px; cursor:pointer; font-size:13px; }
     .year-filter button.on { background:#34d399; border-color:#34d399; color:#0b1220; font-weight:700; }
@@ -170,6 +182,7 @@
 
 <main id="mainContent" style="display:none;">
   <div class="year-filter" id="yearFilter"></div>
+  <div id="budgetCard"></div>
   <!-- Summary Cards -->
   <div class="summary-grid">
     <div class="summary-card">
@@ -365,6 +378,35 @@
     document.getElementById('yearFilter').innerHTML = '<span>År:</span>' + opts.map(y => `<button class="${y === _year ? 'on' : ''}" onclick="setYear('${y}')">${y === 'alla' ? 'Alla år' : y}</button>`).join('');
   }
   function setYear(y) { _year = y; localStorage.setItem('uno_pipeline_year', y); renderYearFilter(_pipeData); renderFiltered(); }
+  function renderBudget(won, weightedOpen) {
+    const el = document.getElementById('budgetCard');
+    const budgets = (_pipeData.summary && _pipeData.summary.budgets) || {};
+    const budget = _year === 'alla' ? 0 : (budgets[_year] || budgets.default || 0);
+    if (!budget) { el.innerHTML = ''; return; }
+    const forecast = won + weightedOpen;
+    const wonPct = Math.min(won / budget * 100, 100);
+    const fcPct = Math.min(Math.max(forecast / budget * 100 - wonPct, 0), 100 - wonPct);
+    const now = new Date(), y = parseInt(_year, 10);
+    const start = new Date(y, 0, 1), end = new Date(y + 1, 0, 1);
+    const pace = Math.min(Math.max((now - start) / (end - start) * 100, 0), 100);
+    const gap = budget - forecast;
+    el.innerHTML = `
+      <div class="budget-card">
+        <div class="bh"><div class="bt">Utfall mot budget ${_year}</div><div class="bs">Budget ${fmt(budget)}</div></div>
+        <div class="budget-bar">
+          <div class="seg-won" style="width:${wonPct.toFixed(1)}%"></div>
+          <div class="seg-fc" style="width:${fcPct.toFixed(1)}%"></div>
+          ${pace > 0 && pace < 100 ? `<div class="pace" style="left:${pace.toFixed(1)}%" title="Takt i dag"></div>` : ''}
+        </div>
+        <div class="budget-legend">
+          <span><i style="background:#34d399"></i>Vunnet ${fmt(won)} (${Math.round(won / budget * 100)}%)</span>
+          <span><i style="background:rgba(52,211,153,0.3)"></i>Prognos ${fmt(forecast)} (${Math.round(forecast / budget * 100)}%)</span>
+          <span><i style="background:#fbbf24;width:2px;height:13px;border-radius:0"></i>Takt ${Math.round(pace)}%</span>
+          <span class="${gap <= 0 ? 'ok' : 'miss'}">${gap <= 0 ? 'Når budget med ' + fmt(-gap) : 'Saknas ' + fmt(gap)}</span>
+        </div>
+      </div>`;
+  }
+
   function renderFiltered() {
     const inYear = d => _year === 'alla' || !yearOf(d) || yearOf(d) === _year;
     const active = _pipeData.deals.filter(d => d.is_active && inYear(d));
@@ -380,6 +422,7 @@
     renderStages(Object.values(stageMap).sort((a, b) => parseInt(a.stage_num) - parseInt(b.stage_num)));
     renderDeals(active, weighted);
     renderWonDeals(won);
+    renderBudget(won.reduce((s, d) => s + (d.deal_size || 0), 0), weighted);
   }
 
   function renderSummary(s) {
